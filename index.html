@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4f1e7">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon-192.png">
+<link rel="stylesheet" href="./style.css">
+<script type="module" src="./app.js"></script>
+<title>روزنگار | محاسبهٔ نفس</title>
+</head>
+<body>
+<main>
+<header><span class="brand">✦ روزنگار</span><button id="install" hidden>نصب برنامه</button></header>
+<section class="hero"><p>دفتر محاسبهٔ نفس</p><h1>امروز چگونه گذشت؟</h1><p>لحظه‌ای برای مرور رفتارها، شکرگزاری و جبران.</p></section>
+<nav aria-label="بخش‌ها">
+<button data-tab="daily" aria-current="page">امروز</button>
+<button data-tab="habits">رفتارها</button>
+<button data-tab="reports">گزارش</button>
+<button data-tab="follow">جبران</button>
+</nav>
+<section id="daily" class="panel">
+<div class="row"><h2>مرور روز</h2><label>تاریخ <input id="date" type="date" required></label></div>
+<div id="entries"></div>
+<label class="note">امروز بابت چه چیزی شکرگزارم؟<textarea id="gratitude" rows="3" placeholder="یادداشت شکرگزاری"></textarea></label>
+</section>
+<section id="habits" class="panel" hidden>
+<h2>رفتارهای من</h2>
+<form id="habit-form">
+<label>نام رفتار <input name="title" required maxlength="80"></label>
+<label>نوع <select name="type"><option value="1">رفتار خوب</option><option value="-1">رفتار نیازمند اصلاح</option></select></label>
+<label>امتیاز هر بار <input name="weight" type="number" min="1" max="100" value="1" required></label>
+<label>پاداش یا اقدام جبرانی <input name="action" maxlength="120"></label>
+<button class="primary">افزودن رفتار</button>
+</form>
+<ul id="habit-list"></ul>
+</section>
+<section id="reports" class="panel" hidden>
+<div class="row"><h2>کارنامه</h2><label>بازه <select id="period"><option value="1">روزانه</option><option value="7" selected>هفتگی</option><option value="30">۳۰ روزه</option><option value="365">۳۶۵ روزه</option></select></label></div>
+<p id="range"></p><div id="summary"></div><div id="chart"></div>
+</section>
+<section id="follow" class="panel" hidden>
+<h2>پیگیری و جبران</h2>
+<form id="follow-form">
+<label>عنوان <input name="title" required maxlength="120"></label>
+<label>دسته <select name="category"><option>حق‌الناس</option><option>حق‌الله</option><option>سایر</option></select></label>
+<label>توضیحات <textarea name="details" rows="2"></textarea></label>
+<button class="primary">ثبت مورد</button>
+</form>
+<ul id="follow-list"></ul>
+</section>
+<footer>یادداشت‌ها در همین مرورگر ذخیره می‌شوند.<p id="status" role="status"></p></footer>
+</main>
+</body>
+</html>
