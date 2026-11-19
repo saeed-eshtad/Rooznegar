@@ -8,6 +8,8 @@ let kind = 1;
 const persianMonth = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {month: 'long', year: 'numeric'});
 const persianYear = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {year: 'numeric'});
 let reportPeriod = 'day';
+let activeTab = 'daily';
+const persianDay = new Intl.DateTimeFormat('fa-IR-u-ca-persian-nu-latn', {day: 'numeric'});
 const iso = date => [date.getFullYear(), date.getMonth() + 1, date.getDate()]
   .map((part, index) => String(part).padStart(index ? 2 : 4, '0')).join('-');
 const state = JSON.parse(localStorage.getItem(key) || 'null') || (demo ? makeDemoState() : {
@@ -206,6 +208,8 @@ function renderReports() {
   const date = new Date($('#date').value + 'T12:00:00');
   const {start, end, label} = reportRange(date, reportPeriod);
   $('#range').textContent = label;
+  $('#range').hidden = reportPeriod !== 'week';
+  renderDatePicker(date, end, label);
   const totals = {positive: 0, negative: 0, goodCount: 0, badCount: 0};
   const behaviorCounts = new Map();
   for (let current = start; current <= end; current = shiftDate(current, 1)) {
@@ -304,22 +308,47 @@ function renderFollow() {
   }));
 }
 
+function renderDatePicker(date, end, label) {
+  const period = activeTab === 'reports' ? reportPeriod : 'day';
+  const units = {day: 'روز', week: 'هفته', month: 'ماه', year: 'سال'};
+  let heading = period === 'day' ? fullPersianDate.format(date) : label;
+  if (period === 'week') {
+    // A Saturday–Friday week belongs to the month containing its Friday.
+    const week = Math.ceil(Number(persianDay.format(end)) / 7);
+    const ordinals = ['اول', 'دوم', 'سوم', 'چهارم', 'پنجم'];
+    heading = 'هفتهٔ ' + ordinals[week - 1] + ' ' + persianMonth.format(end);
+  }
+  $('#selected-day').textContent = heading;
+  $('#prev').setAttribute('aria-label', units[period] + ' قبل');
+  $('#next').setAttribute('aria-label', units[period] + ' بعد');
+  $('#date-field').hidden = period !== 'day';
+  $('#today').textContent = period === 'day' ? 'امروز' : units[period] + ' جاری';
+}
+
 function selectDay(value) {
   $('#date').value = value;
-  $('#selected-day').textContent = fullPersianDate.format(new Date(value + 'T12:00:00'));
   renderEntries();
   renderReports();
 }
 
-function moveDay(step) {
+function moveDate(step) {
   const date = new Date($('#date').value + 'T12:00:00');
-  date.setDate(date.getDate() + step);
-  selectDay(iso(date));
+  const period = activeTab === 'reports' ? reportPeriod : 'day';
+  selectDay(iso(adjacentDate(date, period, step)));
+}
+
+function adjacentDate(date, period, step) {
+  if (period === 'day' || period === 'week') {
+    return shiftDate(date, step * (period === 'week' ? 7 : 1));
+  }
+  const {start, end} = reportRange(date, period);
+  const neighbor = shiftDate(step < 0 ? start : end, step);
+  return reportRange(neighbor, period).start;
 }
 
 $('#date').onchange = () => selectDay($('#date').value || iso(new Date()));
-$('#prev').onclick = () => moveDay(-1);
-$('#next').onclick = () => moveDay(1);
+$('#prev').onclick = () => moveDate(-1);
+$('#next').onclick = () => moveDate(1);
 $('#today').onclick = () => selectDay(iso(new Date()));
 for (const button of document.querySelectorAll('[data-kind]')) {
   button.onclick = () => {
@@ -439,9 +468,10 @@ for (const button of document.querySelectorAll('nav button')) {
     for (const other of document.querySelectorAll('nav button')) other.removeAttribute('aria-current');
     button.setAttribute('aria-current', 'page');
     for (const panel of document.querySelectorAll('.panel')) panel.hidden = panel.id !== button.dataset.tab;
-    $('#day-picker').hidden = !['daily', 'reports'].includes(button.dataset.tab);
+    activeTab = button.dataset.tab;
+    $('#day-picker').hidden = !['daily', 'reports'].includes(activeTab);
     if (button.dataset.tab === 'actions') renderActionQueue();
-    if (button.dataset.tab === 'reports') renderReports();
+    if (activeTab === 'daily' || activeTab === 'reports') renderReports();
   };
 }
 window.addEventListener('beforeinstallprompt', event => {
