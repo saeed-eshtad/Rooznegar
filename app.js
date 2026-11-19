@@ -18,8 +18,7 @@ const state = JSON.parse(localStorage.getItem(key) || 'null') || (demo ? makeDem
     {id: 'prayer', title: 'نماز اول وقت', type: 1, weight: 1, action: ''},
     {id: 'anger', title: 'تندی در گفتار', type: -1, weight: 1, action: 'در صورت نیاز عذرخواهی کنم'}
   ],
-  days: {},
-  follow: []
+  days: {}
 });
 state.actions ??= [];
 const day = () => state.days[$('#date').value] ??= {entries: {}, gratitude: ''};
@@ -76,7 +75,7 @@ function makeDemoState() {
     }
     days[iso(date)] = {entries};
   }
-  return {habits, actions, days, follow: []};
+  return {habits, actions, days};
 }
 
 function save() {
@@ -290,24 +289,6 @@ function renderBreakdown(good, bad) {
   panel.replaceChildren(pie, legend);
 }
 
-function renderFollow() {
-  $('#follow-list').replaceChildren(...state.follow.map(record => {
-    const item = element('li');
-    const row = element('div', '', 'row');
-    const checkbox = element('input');
-    checkbox.type = 'checkbox';
-    checkbox.checked = record.done;
-    checkbox.onchange = () => {
-      record.done = checkbox.checked;
-      save();
-    };
-    row.append(element('strong', record.title), inputLabel('انجام شد', checkbox));
-    item.append(row, element('p', record.category + ' · ' + persianDate.format(new Date(record.date + 'T12:00:00'))));
-    if (record.details) item.append(element('p', record.details));
-    return item;
-  }));
-}
-
 function renderDatePicker(date, end, label) {
   const period = activeTab === 'reports' ? reportPeriod : 'day';
   const units = {day: 'روز', week: 'هفته', month: 'ماه', year: 'سال'};
@@ -452,17 +433,6 @@ $('#action-form').onsubmit = event => {
   renderActionDefinitions();
 };
 
-$('#follow-form').onsubmit = event => {
-  event.preventDefault();
-  const data = new FormData(event.target);
-  const title = data.get('title').trim();
-  if (!title) return;
-  state.follow.unshift({title, category: data.get('category'), details: data.get('details').trim(),
-    date: $('#date').value, done: false});
-  event.target.reset();
-  save();
-  renderFollow();
-};
 for (const button of document.querySelectorAll('nav button')) {
   button.onclick = () => {
     for (const other of document.querySelectorAll('nav button')) other.removeAttribute('aria-current');
@@ -496,6 +466,5 @@ if (demo) {
   }
 }
 renderHabits();
-renderFollow();
 renderActionLinks();
 renderActionDefinitions();
