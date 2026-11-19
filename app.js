@@ -5,6 +5,13 @@ const number = new Intl.NumberFormat('fa-IR');
 const persianDate = new Intl.DateTimeFormat('fa-IR', {dateStyle: 'medium'});
 const fullPersianDate = new Intl.DateTimeFormat('fa-IR', {dateStyle: 'full'});
 let kind = 1;
+const basicTypes = {
+  good: {type: 1, label: 'خوبی', section: 'habit'},
+  bad: {type: -1, label: 'بدی', section: 'habit'},
+  reward: {type: 1, label: 'پاداش', section: 'action'},
+  penalty: {type: -1, label: 'جریمه', section: 'action'}
+};
+let basicCategory = basicTypes.good;
 const persianMonth = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {month: 'long', year: 'numeric'});
 const persianYear = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {year: 'numeric'});
 let reportPeriod = 'day';
@@ -151,7 +158,7 @@ function renderEntries() {
 }
 
 function renderHabits() {
-  $('#habit-list').replaceChildren(...state.habits.map(habit => {
+  $('#habit-list').replaceChildren(...state.habits.filter(habit => habit.type === basicCategory.type).map(habit => {
     const item = element('li');
     const row = element('div', '', 'row');
     const toggle = element('button', habit.archived ? 'فعال‌سازی' : 'بایگانی');
@@ -349,12 +356,29 @@ for (const button of document.querySelectorAll('[data-period]')) {
     renderReports();
   };
 }
+for (const button of document.querySelectorAll('[data-basics]')) {
+  button.onclick = () => {
+    basicCategory = basicTypes[button.dataset.basics];
+    const {section, label} = basicCategory;
+    for (const other of document.querySelectorAll('[data-basics]')) {
+      other.setAttribute('aria-pressed', String(other === button));
+    }
+    $('#habit-settings').hidden = section !== 'habit';
+    $('#action-settings').hidden = section !== 'action';
+    $('#' + section + '-settings-title').textContent = 'تعریف ' + label;
+    $('#' + section + '-form button').textContent = 'افزودن ' + label;
+    $('#' + section + '-form').reset();
+    if (section === 'habit') renderHabits();
+    else renderActionDefinitions();
+  };
+}
+
 $('#habit-form').onsubmit = event => {
   event.preventDefault();
   const data = new FormData(event.target);
   const title = data.get('title').trim();
   if (!title) return;
-  state.habits.push({id: crypto.randomUUID(), title, type: Number(data.get('type')),
+  state.habits.push({id: crypto.randomUUID(), title, type: basicCategory.type,
     weight: Number(data.get('weight'))});
   event.target.reset();
   save();
@@ -381,7 +405,7 @@ function actionType(action) {
 }
 
 function renderActionDefinitions() {
-  $('#action-definitions').replaceChildren(...state.actions.map(action => {
+  $('#action-definitions').replaceChildren(...state.actions.filter(action => action.type === basicCategory.type).map(action => {
     const item = element('li');
     const names = state.habits.filter(habit => action.habitIds.includes(habit.id)).map(habit => habit.title);
     item.append(element('strong', actionType(action) + ' · ' + action.title),
@@ -427,7 +451,7 @@ $('#action-form').onsubmit = event => {
     $('#status').textContent = 'عنوان و دست‌کم یک رفتار مرتبط را وارد کنید.';
     return;
   }
-  state.actions.push({id: crypto.randomUUID(), title, type: Number(data.get('type')), habitIds, pending: 0});
+  state.actions.push({id: crypto.randomUUID(), title, type: basicCategory.type, habitIds, pending: 0});
   event.target.reset();
   save();
   renderActionDefinitions();

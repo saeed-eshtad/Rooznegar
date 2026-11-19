@@ -44,22 +44,30 @@
 </section>
 <section id="habits" class="panel" hidden>
 <h2>اطلاعات پایه</h2>
-<h3>تعریف خوبی‌ها و بدی‌ها</h3>
+<div class="report-periods" role="group" aria-label="دسته‌های اطلاعات پایه">
+<button type="button" data-basics="good" aria-pressed="true">خوبی‌ها</button>
+<button type="button" data-basics="bad" aria-pressed="false">بدی‌ها</button>
+<button type="button" data-basics="reward" aria-pressed="false">پاداش‌ها</button>
+<button type="button" data-basics="penalty" aria-pressed="false">جریمه‌ها</button>
+</div>
+<section id="habit-settings">
+<h3 id="habit-settings-title">تعریف خوبی</h3>
 <form id="habit-form">
 <label>نام رفتار <input name="title" required maxlength="80"></label>
-<label>نوع <select name="type"><option value="1">رفتار خوب</option><option value="-1">رفتار نیازمند اصلاح</option></select></label>
 <label>امتیاز هر بار <input name="weight" type="number" min="1" max="100" value="1" required></label>
-<button class="primary">افزودن رفتار</button>
+<button class="primary">افزودن خوبی</button>
 </form>
 <ul id="habit-list"></ul>
-<h3>تعریف پاداش و جریمه</h3>
+</section>
+<section id="action-settings" hidden>
+<h3 id="action-settings-title">تعریف پاداش</h3>
 <form id="action-form">
 <label>عنوان <input name="title" required maxlength="120"></label>
-<label>نوع <select name="type"><option value="1">پاداش</option><option value="-1">جریمه</option></select></label>
 <fieldset><legend>رفتارهای مرتبط</legend><div id="action-links"></div></fieldset>
-<button class="primary">افزودن پاداش یا جریمه</button>
+<button class="primary">افزودن پاداش</button>
 </form>
 <ul id="action-definitions"></ul>
+</section>
 </section>
 <section id="actions" class="panel" hidden>
 <h2 tabindex="-1">پاداش–جریمه</h2>
