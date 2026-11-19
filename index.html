@@ -14,11 +14,18 @@
 <main>
 <header><span class="brand">✦ روزنگار</span><button id="install" hidden>نصب برنامه</button></header>
 <section class="hero"><p>دفتر محاسبهٔ نفس</p><h1>مرور رفتارهای روزانه</h1></section>
+<aside id="demo-tools" class="panel" hidden>
+<div class="row"><strong>نسخهٔ آزمایشی با داده‌های ساختگی</strong><a href="./">بازگشت به روزنگار شخصی</a></div>
+<div class="row">
+<button data-demo-year="2025-03-20">گزارش سال ۱۴۰۳</button>
+<button data-demo-year="2026-03-20">گزارش سال ۱۴۰۴</button>
+</div>
+</aside>
 <nav aria-label="بخش‌ها">
 <button data-tab="daily" aria-current="page">خانه</button>
 <button data-tab="habits">اطلاعات پایه</button>
 <button data-tab="actions">پاداش–جریمه</button>
-<button data-tab="reports">گزارش</button>
+<button data-tab="reports" id="reports-tab">گزارش</button>
 <button data-tab="follow">جبران</button>
 </nav>
 <section id="day-picker" class="panel" aria-label="انتخاب روز">

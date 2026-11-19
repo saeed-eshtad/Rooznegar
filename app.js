@@ -1,5 +1,6 @@
 const $ = selector => document.querySelector(selector);
-const key = 'rooznegar-v1';
+const demo = new URLSearchParams(location.search).get('demo') === '1';
+const key = demo ? 'rooznegar-demo-v1' : 'rooznegar-v1';
 const number = new Intl.NumberFormat('fa-IR');
 const persianDate = new Intl.DateTimeFormat('fa-IR', {dateStyle: 'medium'});
 const fullPersianDate = new Intl.DateTimeFormat('fa-IR', {dateStyle: 'full'});
@@ -9,7 +10,7 @@ const persianYear = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {year: 'numeri
 let reportPeriod = 'day';
 const iso = date => [date.getFullYear(), date.getMonth() + 1, date.getDate()]
   .map((part, index) => String(part).padStart(index ? 2 : 4, '0')).join('-');
-const state = JSON.parse(localStorage.getItem(key) || 'null') || {
+const state = JSON.parse(localStorage.getItem(key) || 'null') || (demo ? makeDemoState() : {
   habits: [
     {id: 'kindness', title: 'کمک به دیگران', type: 1, weight: 1, action: ''},
     {id: 'prayer', title: 'نماز اول وقت', type: 1, weight: 1, action: ''},
@@ -17,10 +18,64 @@ const state = JSON.parse(localStorage.getItem(key) || 'null') || {
   ],
   days: {},
   follow: []
-};
+});
 state.actions ??= [];
 const day = () => state.days[$('#date').value] ??= {entries: {}, gratitude: ''};
 $('#date').value = iso(new Date());
+
+function makeDemoState() {
+  const examples = [
+    [1, 'نماز اول وقت', 'استراحت با یک فنجان چای'],
+    [1, 'کمک به دیگران', 'تماشای یک قسمت از برنامهٔ دلخواه'],
+    [1, 'مطالعه', 'گوش دادن به موسیقی دلخواه'],
+    [1, 'ورزش', 'رفتن به پارک'],
+    [1, 'وفای به عهد', 'آماده کردن میان‌وعدهٔ دلخواه'],
+    [1, 'تماس با والدین', 'وقت گذاشتن برای یک سرگرمی'],
+    [1, 'خوش‌رفتاری', 'نوشیدن قهوه در کافه'],
+    [1, 'مرتب‌کردن خانه', 'وقت آزاد برای مطالعهٔ داستان'],
+    [1, 'پس‌انداز', 'برنامه‌ریزی برای یک گردش'],
+    [1, 'وقت‌گذاشتن برای خانواده', 'انتخاب یک فیلم برای تماشای خانوادگی'],
+    [-1, 'دیر رسیدن', 'تنظیم یادآور برای قرار بعدی'],
+    [-1, 'تندی در گفتار', 'عذرخواهی و گفت‌وگوی آرام'],
+    [-1, 'به‌تعویق‌انداختن کارها', 'انجام یک کار عقب‌افتاده'],
+    [-1, 'استفادهٔ زیاد از گوشی', 'تنظیم محدودیت زمانی برای گوشی'],
+    [-1, 'بدقولی', 'پیگیری و جبران قول انجام‌نشده'],
+    [-1, 'اسراف غذا', 'برنامه‌ریزی برای مصرف باقی‌ماندهٔ غذا'],
+    [-1, 'حواس‌پرتی هنگام گفت‌وگو', 'تمرین گوش‌دادن بدون گوشی'],
+    [-1, 'خرید غیرضروری', 'مرور مخارج روزانه'],
+    [-1, 'دیر خوابیدن', 'تنظیم یادآور زمان خواب'],
+    [-1, 'بی‌نظمی', 'مرتب‌کردن فضای کار']
+  ];
+  let seed = 14031404;
+  function random() {
+    seed = (Math.imul(1664525, seed) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  }
+
+  const habits = examples.map(([type, title], index) => ({
+    id: 'demo-habit-' + index, type, title, weight: 1 + Math.floor(random() * 20)
+  }));
+  const actions = examples.map(([type, , title], index) => ({
+    id: 'demo-action-' + index, type, title, habitIds: [habits[index].id], pending: 0
+  }));
+  const days = {};
+  const first = new Date('2024-03-20T12:00:00');
+  const last = new Date('2026-03-20T12:00:00');
+  for (let date = first; date <= last; date = shiftDate(date, 1)) {
+    const entries = {};
+    for (const [index, habit] of habits.entries()) {
+      const frequency = (habit.type === 1 ? 0.75 : 0.48) - 0.045 * (index % 10);
+      if (random() >= frequency) continue;
+      const count = 1 + Math.floor(random() * (index % 3 + 2));
+      const action = actions[index];
+      entries[habit.id] = {count, credits: {[action.id]: count}};
+      // Older demo items are completed, leaving a short queue to try.
+      if (date >= shiftDate(last, -6) && random() < 0.3) action.pending += count;
+    }
+    days[iso(date)] = {entries};
+  }
+  return {habits, actions, days, follow: []};
+}
 
 function save() {
   try {
@@ -399,7 +454,17 @@ window.addEventListener('beforeinstallprompt', event => {
   };
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.error);
-selectDay(iso(new Date()));
+selectDay(demo ? '2026-03-20' : iso(new Date()));
+if (demo) {
+  $('#demo-tools').hidden = false;
+  for (const button of document.querySelectorAll('[data-demo-year]')) {
+    button.onclick = () => {
+      selectDay(button.dataset.demoYear);
+      $('#reports-tab').click();
+      document.querySelector('[data-period="year"]').click();
+    };
+  }
+}
 renderHabits();
 renderFollow();
 renderActionLinks();
