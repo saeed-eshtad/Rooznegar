@@ -171,6 +171,37 @@ function renderHabitSchedule() {
   $('#habit-schedule').replaceChildren(...fields);
 }
 
+function updateActionCredits(entry, habit, change) {
+  entry.credits ??= {};
+  for (const action of state.actions) {
+    const recorded = entry.credits[action.id];
+    const batches = Array.isArray(recorded) ? recorded :
+      recorded ? [{count: recorded, quantity: 1}] : [];
+    let units = 0;
+    if (change > 0 && action.type === habit.type && action.habitIds.includes(habit.id)) {
+      const quantity = action.quantity ?? 1;
+      const last = batches.at(-1);
+      if (last?.quantity === quantity) last.count += change;
+      else batches.push({count: change, quantity});
+      units = quantity * change;
+    } else if (change < 0) {
+      let remaining = -change;
+      while (remaining && batches.length) {
+        const last = batches.at(-1);
+        const removed = Math.min(last.count, remaining);
+        last.count -= removed;
+        remaining -= removed;
+        units -= removed * last.quantity;
+        if (!last.count) batches.pop();
+      }
+    }
+    if (!units) continue;
+    if (batches.length) entry.credits[action.id] = batches;
+    else delete entry.credits[action.id];
+    action.pending = Math.max(0, action.pending + units);
+  }
+}
+
 function renderEntries() {
   const selected = day();
   const date = new Date($('#date').value + 'T12:00:00');
@@ -190,15 +221,7 @@ function renderEntries() {
       const change = next - entry.count;
       if (!change) return;
       entry.count = next;
-      entry.credits ??= {};
-      for (const action of state.actions) {
-        const previous = entry.credits[action.id] || 0;
-        const delta = change < 0 ? -Math.min(previous, -change) :
-          action.habitIds.includes(habit.id) ? change : 0;
-        if (!delta) continue;
-        entry.credits[action.id] = previous + delta;
-        action.pending = Math.max(0, action.pending + delta);
-      }
+      updateActionCredits(entry, habit, change);
       save();
     };
     count.addEventListener('input', update);
@@ -452,6 +475,7 @@ function editButton(item) {
         }
       }
     } else {
+      form.elements.quantity.value = item.quantity ?? 1;
       renderActionLinks();
     }
     $('#' + section + '-settings-title').textContent = 'ویرایش ' + label;
@@ -498,7 +522,8 @@ $('#habit-form').onsubmit = event => {
 };
 function renderActionLinks() {
   const links = $('#action-links');
-  const active = state.habits.filter(habit => !habit.archived || editingItem?.habitIds?.includes(habit.id));
+  const active = state.habits.filter(habit => habit.type === basicCategory.type &&
+    (!habit.archived || editingItem?.habitIds?.includes(habit.id)));
   links.replaceChildren(...active.map(habit => {
     const checkbox = element('input');
     checkbox.type = 'checkbox';
@@ -507,7 +532,7 @@ function renderActionLinks() {
     checkbox.checked = editingItem?.habitIds?.includes(habit.id) ?? false;
     return inputLabel((habit.type === 1 ? 'خوبی · ' : 'بدی · ') + habit.title, checkbox);
   }));
-  if (!active.length) links.append(element('p', 'ابتدا یک رفتار تعریف یا فعال کنید.'));
+  if (!active.length) links.append(element('p', 'ابتدا یک ' + (basicCategory.type === 1 ? 'خوبی' : 'بدی') + ' تعریف یا فعال کنید.'));
   $('#action-form [type="submit"]').disabled = !active.length;
 }
 
@@ -518,9 +543,11 @@ function actionType(action) {
 function renderActionDefinitions() {
   $('#action-definitions').replaceChildren(...state.actions.filter(action => action.type === basicCategory.type).map(action => {
     const item = element('li');
-    const names = state.habits.filter(habit => action.habitIds.includes(habit.id)).map(habit => habit.title);
+    const names = state.habits.filter(habit => habit.type === action.type && action.habitIds.includes(habit.id))
+      .map(habit => habit.title);
     item.append(element('strong', actionType(action) + ' · ' + action.title),
-      element('p', names.join('، ')), editButton(action));
+      element('p', number.format(action.quantity ?? 1) + ' بار به‌ازای هر ثبت'),
+      element('p', names.join('، ') || 'رفتار مرتبط انتخاب نشده است.'), editButton(action));
     return item;
   }));
 }
@@ -557,13 +584,16 @@ $('#action-form').onsubmit = event => {
   event.preventDefault();
   const data = new FormData(event.target);
   const title = data.get('title').trim();
-  const habitIds = data.getAll('habit');
+  const quantity = Number(data.get('quantity'));
+  const habitIds = data.getAll('habit').filter(id => state.habits.some(habit =>
+    habit.id === id && habit.type === basicCategory.type));
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000000) return;
   if (!title || !habitIds.length) {
     $('#status').textContent = 'عنوان و دست‌کم یک رفتار مرتبط را وارد کنید.';
     return;
   }
-  if (editingItem) Object.assign(editingItem, {title, habitIds});
-  else state.actions.push({id: crypto.randomUUID(), title, type: basicCategory.type, habitIds, pending: 0});
+  if (editingItem) Object.assign(editingItem, {title, habitIds, quantity});
+  else state.actions.push({id: crypto.randomUUID(), title, type: basicCategory.type, habitIds, quantity, pending: 0});
   resetBasicForm();
   save();
   renderActionDefinitions();
