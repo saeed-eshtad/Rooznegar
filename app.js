@@ -4,7 +4,9 @@ const number = new Intl.NumberFormat('fa-IR');
 const persianDate = new Intl.DateTimeFormat('fa-IR', {dateStyle: 'medium'});
 const fullPersianDate = new Intl.DateTimeFormat('fa-IR', {dateStyle: 'full'});
 let kind = 1;
-let reportDays = 1;
+const persianMonth = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {month: 'long', year: 'numeric'});
+const persianYear = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {year: 'numeric'});
+let reportPeriod = 'day';
 const iso = date => [date.getFullYear(), date.getMonth() + 1, date.getDate()]
   .map((part, index) => String(part).padStart(index ? 2 : 4, '0')).join('-');
 const state = JSON.parse(localStorage.getItem(key) || 'null') || {
@@ -121,37 +123,60 @@ function dayScores(date) {
   return scores;
 }
 
+function shiftDate(date, days) {
+  const shifted = new Date(date);
+  shifted.setDate(date.getDate() + days);
+  return shifted;
+}
+
+function reportRange(date, period) {
+  if (period === 'day') return {start: date, end: date, label: persianDate.format(date)};
+  if (period === 'week') {
+    const start = shiftDate(date, -((date.getDay() + 1) % 7));
+    const end = shiftDate(start, 6);
+    return {start, end, label: persianDate.formatRange(start, end)};
+  }
+
+  const formatter = period === 'month' ? persianMonth : persianYear;
+  const label = formatter.format(date);
+  let start = date;
+  let end = date;
+  while (formatter.format(shiftDate(start, -1)) === label) start = shiftDate(start, -1);
+  while (formatter.format(shiftDate(end, 1)) === label) end = shiftDate(end, 1);
+  return {start, end, label: period === 'year' ? 'سال ' + label : label};
+}
+
 function renderReports() {
-  const end = new Date($('#date').value + 'T12:00:00');
-  const days = Array.from({length: reportDays}, (_, index) => {
-    const date = new Date(end);
-    date.setDate(end.getDate() - index);
-    return {date, ...dayScores(iso(date))};
-  });
-  $('#range').textContent = persianDate.formatRange(days.at(-1).date, end);
-  const total = field => days.reduce((sum, item) => sum + item[field], 0);
-  const positive = total('positive');
-  const negative = total('negative');
+  const date = new Date($('#date').value + 'T12:00:00');
+  const {start, end, label} = reportRange(date, reportPeriod);
+  $('#range').textContent = label;
+  const totals = {positive: 0, negative: 0, goodCount: 0, badCount: 0};
+  for (let current = start; current <= end; current = shiftDate(current, 1)) {
+    const scores = dayScores(iso(current));
+    for (const field of Object.keys(totals)) totals[field] += scores[field];
+  }
+  const positive = totals.positive;
+  const negative = totals.negative;
   const stats = element('div', '', 'stats');
   stats.append(...[['مثبت', positive], ['منفی', negative], ['خالص', positive - negative]]
     .map(([label, value]) => element('span', label + ' ' + number.format(value))));
   $('#summary').replaceChildren(stats);
-  const maximum = Math.max(1, ...days.flatMap(item => [item.positive, item.negative]));
-  const active = days.filter(item => item.positive || item.negative);
-  $('#chart').replaceChildren(...active.map(item => {
+  const chart = $('#chart');
+  if (positive || negative) {
     const row = element('div', '', 'chart-row');
     const bars = element('div');
-    for (const [field, label] of [['positive', 'مثبت'], ['negative', 'منفی']]) {
+    for (const [field, caption] of [['positive', 'مثبت'], ['negative', 'منفی']]) {
       const bar = element('progress', '', field);
-      bar.max = maximum;
-      bar.value = item[field];
-      bars.append(inputLabel(label + ' ' + number.format(item[field]), bar));
+      bar.max = Math.max(positive, negative);
+      bar.value = totals[field];
+      bars.append(inputLabel(caption + ' ' + number.format(totals[field]), bar));
     }
-    row.append(element('span', persianDate.format(item.date)), bars);
-    return row;
-  }));
-  if (!active.length) $('#chart').append(element('p', 'در این بازه امتیازی ثبت نشده است.'));
-  renderBreakdown(total('goodCount'), total('badCount'));
+    row.append(element('span', 'جمع بازه'), bars);
+    chart.replaceChildren(row);
+  } else {
+    chart.replaceChildren(element('p', 'در این بازه امتیازی ثبت نشده است.'));
+  }
+  renderBreakdown(totals.goodCount, totals.badCount);
 }
 
 function renderBreakdown(good, bad) {
@@ -220,7 +245,7 @@ for (const button of document.querySelectorAll('[data-kind]')) {
 }
 for (const button of document.querySelectorAll('[data-period]')) {
   button.onclick = () => {
-    reportDays = Number(button.dataset.period);
+    reportPeriod = button.dataset.period;
     for (const period of document.querySelectorAll('[data-period]')) {
       period.setAttribute('aria-pressed', String(period === button));
     }
