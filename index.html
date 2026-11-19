@@ -61,8 +61,18 @@
 <ul id="action-queue"></ul>
 </section>
 <section id="reports" class="panel" hidden>
-<div class="row"><h2>کارنامه</h2><label>بازه <select id="period"><option value="1" selected>روزانه</option><option value="7">هفتگی</option><option value="30">۳۰ روزه</option><option value="365">۳۶۵ روزه</option></select></label></div>
+<h2>کارنامه</h2>
+<div class="report-periods" role="group" aria-label="بازهٔ گزارش">
+<button data-period="1" aria-pressed="true">گزارش روزانه</button>
+<button data-period="7" aria-pressed="false">گزارش هفتگی</button>
+<button data-period="30" aria-pressed="false">گزارش ماهانه</button>
+<button data-period="365" aria-pressed="false">گزارش سالانه</button>
+</div>
 <p id="range"></p><div id="summary"></div><div id="chart"></div>
+<section class="report-breakdown" aria-labelledby="breakdown-title">
+<h3 id="breakdown-title">سهم خوبی‌ها و بدی‌ها از تعداد رفتارها</h3>
+<div id="breakdown"></div>
+</section>
 </section>
 <section id="follow" class="panel" hidden>
 <h2>پیگیری و جبران</h2>

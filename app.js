@@ -4,6 +4,7 @@ const number = new Intl.NumberFormat('fa-IR');
 const persianDate = new Intl.DateTimeFormat('fa-IR', {dateStyle: 'medium'});
 const fullPersianDate = new Intl.DateTimeFormat('fa-IR', {dateStyle: 'full'});
 let kind = 1;
+let reportDays = 1;
 const iso = date => [date.getFullYear(), date.getMonth() + 1, date.getDate()]
   .map((part, index) => String(part).padStart(index ? 2 : 4, '0')).join('-');
 const state = JSON.parse(localStorage.getItem(key) || 'null') || {
@@ -110,19 +111,19 @@ function renderHabits() {
 }
 
 function dayScores(date) {
-  const scores = {positive: 0, negative: 0};
+  const scores = {positive: 0, negative: 0, goodCount: 0, badCount: 0};
   for (const habit of state.habits) {
     const entry = state.days[date]?.entries[habit.id];
     if (!entry) continue;
     scores[habit.type === 1 ? 'positive' : 'negative'] += habit.weight * entry.count;
+    scores[habit.type === 1 ? 'goodCount' : 'badCount'] += entry.count;
   }
   return scores;
 }
 
 function renderReports() {
-  const count = Number($('#period').value);
   const end = new Date($('#date').value + 'T12:00:00');
-  const days = Array.from({length: count}, (_, index) => {
+  const days = Array.from({length: reportDays}, (_, index) => {
     const date = new Date(end);
     date.setDate(end.getDate() - index);
     return {date, ...dayScores(iso(date))};
@@ -150,6 +151,27 @@ function renderReports() {
     return row;
   }));
   if (!active.length) $('#chart').append(element('p', 'در این بازه امتیازی ثبت نشده است.'));
+  renderBreakdown(total('goodCount'), total('badCount'));
+}
+
+function renderBreakdown(good, bad) {
+  const total = good + bad;
+  const panel = $('#breakdown');
+  if (!total) {
+    panel.replaceChildren(element('p', 'در این بازه رفتاری ثبت نشده است.'));
+    return;
+  }
+
+  const pie = element('div', '', 'report-pie');
+  pie.setAttribute('aria-hidden', 'true');
+  pie.style.setProperty('--good-share', (100 * good / total) + '%');
+  const percent = new Intl.NumberFormat('fa-IR', {style: 'percent', maximumFractionDigits: 1});
+  const legend = element('ul', '', 'report-legend');
+  for (const [label, count, tone] of [['خوبی‌ها', good, 'good'], ['بدی‌ها', bad, 'bad']]) {
+    legend.append(element('li', label + ' · ' + number.format(count) + ' مورد · ' +
+      percent.format(count / total), tone));
+  }
+  panel.replaceChildren(pie, legend);
 }
 
 function renderFollow() {
@@ -196,7 +218,15 @@ for (const button of document.querySelectorAll('[data-kind]')) {
     renderEntries();
   };
 }
-$('#period').onchange = renderReports;
+for (const button of document.querySelectorAll('[data-period]')) {
+  button.onclick = () => {
+    reportDays = Number(button.dataset.period);
+    for (const period of document.querySelectorAll('[data-period]')) {
+      period.setAttribute('aria-pressed', String(period === button));
+    }
+    renderReports();
+  };
+}
 $('#habit-form').onsubmit = event => {
   event.preventDefault();
   const data = new FormData(event.target);
@@ -299,10 +329,7 @@ for (const button of document.querySelectorAll('nav button')) {
     for (const panel of document.querySelectorAll('.panel')) panel.hidden = panel.id !== button.dataset.tab;
     $('#day-picker').hidden = !['daily', 'reports'].includes(button.dataset.tab);
     if (button.dataset.tab === 'actions') renderActionQueue();
-    if (button.dataset.tab === 'reports') {
-      $('#period').value = '1';
-      renderReports();
-    }
+    if (button.dataset.tab === 'reports') renderReports();
   };
 }
 window.addEventListener('beforeinstallprompt', event => {
