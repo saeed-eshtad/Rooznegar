@@ -13,15 +13,26 @@
 <body>
 <main>
 <header><span class="brand">✦ روزنگار</span><button id="install" hidden>نصب برنامه</button></header>
-<section class="hero"><p>دفتر محاسبهٔ نفس</p><h1>امروز چگونه گذشت؟</h1><p>لحظه‌ای برای مرور رفتارها، شکرگزاری و جبران.</p></section>
+<section class="hero"><p>دفتر محاسبهٔ نفس</p><h1>مرور رفتارهای روزانه</h1><p>لحظه‌ای برای مرور رفتارها، شکرگزاری و جبران.</p></section>
 <nav aria-label="بخش‌ها">
-<button data-tab="daily" aria-current="page">امروز</button>
+<button data-tab="daily" aria-current="page">خانه</button>
 <button data-tab="habits">رفتارها</button>
 <button data-tab="reports">گزارش</button>
 <button data-tab="follow">جبران</button>
 </nav>
+<section id="day-picker" class="panel" aria-label="انتخاب روز">
+<div class="date-controls">
+<button id="prev" aria-label="روز قبل">›</button>
+<output id="selected-day" aria-live="polite"></output>
+<button id="next" aria-label="روز بعد">‹</button>
+</div>
+<div class="date-options"><button id="today">امروز</button><label>انتخاب تاریخ<input id="date" type="date" required></label></div>
+</section>
 <section id="daily" class="panel">
-<div class="row"><h2>مرور روز</h2><label>تاریخ <input id="date" type="date" required></label></div>
+<div class="behavior-tabs" role="group" aria-label="نوع رفتار">
+<button data-kind="1" aria-pressed="true">خوبی‌ها</button>
+<button data-kind="-1" aria-pressed="false">بدی‌ها</button>
+</div>
 <div id="entries"></div>
 <label class="note">امروز بابت چه چیزی شکرگزارم؟<textarea id="gratitude" rows="3" placeholder="یادداشت شکرگزاری"></textarea></label>
 </section>
@@ -37,7 +48,7 @@
 <ul id="habit-list"></ul>
 </section>
 <section id="reports" class="panel" hidden>
-<div class="row"><h2>کارنامه</h2><label>بازه <select id="period"><option value="1">روزانه</option><option value="7" selected>هفتگی</option><option value="30">۳۰ روزه</option><option value="365">۳۶۵ روزه</option></select></label></div>
+<div class="row"><h2>کارنامه</h2><label>بازه <select id="period"><option value="1" selected>روزانه</option><option value="7">هفتگی</option><option value="30">۳۰ روزه</option><option value="365">۳۶۵ روزه</option></select></label></div>
 <p id="range"></p><div id="summary"></div><div id="chart"></div>
 </section>
 <section id="follow" class="panel" hidden>

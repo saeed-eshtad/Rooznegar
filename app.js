@@ -2,6 +2,8 @@ const $ = selector => document.querySelector(selector);
 const key = 'rooznegar-v1';
 const number = new Intl.NumberFormat('fa-IR');
 const persianDate = new Intl.DateTimeFormat('fa-IR', {dateStyle: 'medium'});
+const fullPersianDate = new Intl.DateTimeFormat('fa-IR', {dateStyle: 'full'});
+let kind = 1;
 const iso = date => [date.getFullYear(), date.getMonth() + 1, date.getDate()]
   .map((part, index) => String(part).padStart(index ? 2 : 4, '0')).join('-');
 const state = JSON.parse(localStorage.getItem(key) || 'null') || {
@@ -41,7 +43,8 @@ function inputLabel(text, input) {
 function renderEntries() {
   const selected = day();
   $('#gratitude').value = selected.gratitude;
-  const cards = state.habits.filter(habit => !habit.archived || selected.entries[habit.id]).map(habit => {
+  const cards = state.habits.filter(habit => habit.type === kind &&
+    (!habit.archived || selected.entries[habit.id])).map(habit => {
     const card = element('article', '', 'entry');
     const heading = element('div', '', 'row');
     const count = element('input');
@@ -59,7 +62,19 @@ function renderEntries() {
     };
     count.addEventListener('input', update);
     note.addEventListener('input', update);
-    heading.append(element('strong', habit.title), inputLabel('تعداد', count));
+    const counter = element('div', '', 'counter');
+    count.setAttribute('aria-label', 'تعداد ' + habit.title);
+    for (const [step, symbol, label] of [[1, '+', 'افزایش'], [-1, '−', 'کاهش']]) {
+      const button = element('button', symbol);
+      button.setAttribute('aria-label', label + ' تعداد ' + habit.title);
+      button.onclick = () => {
+        count.value = Math.max(0, Math.min(999, (Number(count.value) || 0) + step));
+        update();
+      };
+      counter.append(button);
+      if (step === 1) counter.append(count);
+    }
+    heading.append(element('strong', habit.title), counter);
     const score = (habit.type > 0 ? '+' : '−') + number.format(habit.weight);
     card.append(heading, element('p', score + ' امتیاز برای هر بار' + (habit.action ? ' · ' + habit.action : '')),
       inputLabel('یادداشت رفتار', note));
@@ -146,11 +161,32 @@ function renderFollow() {
   }));
 }
 
-$('#date').onchange = () => {
-  if (!$('#date').value) $('#date').value = iso(new Date());
+function selectDay(value) {
+  $('#date').value = value;
+  $('#selected-day').textContent = fullPersianDate.format(new Date(value + 'T12:00:00'));
   renderEntries();
   renderReports();
-};
+}
+
+function moveDay(step) {
+  const date = new Date($('#date').value + 'T12:00:00');
+  date.setDate(date.getDate() + step);
+  selectDay(iso(date));
+}
+
+$('#date').onchange = () => selectDay($('#date').value || iso(new Date()));
+$('#prev').onclick = () => moveDay(-1);
+$('#next').onclick = () => moveDay(1);
+$('#today').onclick = () => selectDay(iso(new Date()));
+for (const button of document.querySelectorAll('[data-kind]')) {
+  button.onclick = () => {
+    kind = Number(button.dataset.kind);
+    for (const tab of document.querySelectorAll('[data-kind]')) {
+      tab.setAttribute('aria-pressed', String(tab === button));
+    }
+    renderEntries();
+  };
+}
 $('#period').onchange = renderReports;
 $('#gratitude').oninput = event => {
   day().gratitude = event.target.value;
@@ -184,7 +220,11 @@ for (const button of document.querySelectorAll('nav button')) {
     for (const other of document.querySelectorAll('nav button')) other.removeAttribute('aria-current');
     button.setAttribute('aria-current', 'page');
     for (const panel of document.querySelectorAll('.panel')) panel.hidden = panel.id !== button.dataset.tab;
-    if (button.dataset.tab === 'reports') renderReports();
+    $('#day-picker').hidden = !['daily', 'reports'].includes(button.dataset.tab);
+    if (button.dataset.tab === 'reports') {
+      $('#period').value = '1';
+      renderReports();
+    }
   };
 }
 window.addEventListener('beforeinstallprompt', event => {
@@ -197,6 +237,6 @@ window.addEventListener('beforeinstallprompt', event => {
   };
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.error);
-renderEntries();
+selectDay(iso(new Date()));
 renderHabits();
 renderFollow();
