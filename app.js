@@ -112,13 +112,14 @@ function renderHabits() {
   }));
 }
 
-function dayScores(date) {
+function dayScores(date, behaviorCounts) {
   const scores = {positive: 0, negative: 0, goodCount: 0, badCount: 0};
   for (const habit of state.habits) {
     const entry = state.days[date]?.entries[habit.id];
     if (!entry) continue;
     scores[habit.type === 1 ? 'positive' : 'negative'] += habit.weight * entry.count;
     scores[habit.type === 1 ? 'goodCount' : 'badCount'] += entry.count;
+    behaviorCounts.set(habit.id, (behaviorCounts.get(habit.id) || 0) + entry.count);
   }
   return scores;
 }
@@ -151,8 +152,9 @@ function renderReports() {
   const {start, end, label} = reportRange(date, reportPeriod);
   $('#range').textContent = label;
   const totals = {positive: 0, negative: 0, goodCount: 0, badCount: 0};
+  const behaviorCounts = new Map();
   for (let current = start; current <= end; current = shiftDate(current, 1)) {
-    const scores = dayScores(iso(current));
+    const scores = dayScores(iso(current), behaviorCounts);
     for (const field of Object.keys(totals)) totals[field] += scores[field];
   }
   const positive = totals.positive;
@@ -177,6 +179,36 @@ function renderReports() {
     chart.replaceChildren(element('p', 'در این بازه امتیازی ثبت نشده است.'));
   }
   renderBreakdown(totals.goodCount, totals.badCount);
+  const ranked = state.habits
+    .map(habit => ({...habit, count: behaviorCounts.get(habit.id) || 0}))
+    .filter(habit => habit.count > 0)
+    .sort((a, b) => b.count - a.count || a.title.localeCompare(b.title, 'fa'));
+  renderPareto($('#good-pareto'), ranked.filter(habit => habit.type === 1), totals.goodCount);
+  renderPareto($('#bad-pareto'), ranked.filter(habit => habit.type === -1), totals.badCount);
+}
+
+function renderPareto(panel, ranked, total) {
+  if (!ranked.length) {
+    panel.replaceChildren(element('p', 'در این بازه موردی ثبت نشده است.'));
+    return;
+  }
+
+  const percent = new Intl.NumberFormat('fa-IR', {style: 'percent', maximumFractionDigits: 1});
+  const list = element('ol', '', 'pareto-list');
+  let cumulative = 0;
+  for (const {title, count} of ranked) {
+    cumulative += count;
+    const item = element('li');
+    const bar = element('progress');
+    bar.max = ranked[0].count;
+    bar.value = count;
+    bar.setAttribute('aria-hidden', 'true');
+    const row = element('div', '', 'row');
+    row.append(element('strong', title), element('span', number.format(count) + ' بار'));
+    item.append(row, bar, element('small', 'سهم تجمعی ' + percent.format(cumulative / total)));
+    list.append(item);
+  }
+  panel.replaceChildren(list);
 }
 
 function renderBreakdown(good, bad) {

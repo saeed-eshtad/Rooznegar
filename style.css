@@ -33,3 +33,7 @@ fieldset{min-inline-size:0;border:1px solid #c7d0c4;border-radius:12px}
 .report-pie{width:min(100%,210px);aspect-ratio:1;margin-inline:auto;border-radius:50%;background:conic-gradient(#346c54 0 var(--good-share),#a24e39 var(--good-share) 100%)}
 .report-legend li::before{content:"";display:inline-block;width:.8em;height:.8em;border-radius:50%;margin-inline-end:8px;background:#346c54}
 .report-legend .bad::before{background:#a24e39}
+.pareto-list{list-style:none;padding:0;margin:0}
+.pareto-list progress{display:block;margin-block:6px}
+.pareto.bad progress{accent-color:#a24e39}
+.pareto-list small{color:#455a51}
