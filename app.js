@@ -12,6 +12,7 @@ const basicTypes = {
   penalty: {type: -1, label: 'جریمه', section: 'action'}
 };
 let basicCategory = basicTypes.good;
+let editingItem = null;
 const persianMonth = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {month: 'long', year: 'numeric'});
 const persianYear = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {year: 'numeric'});
 let reportPeriod = 'day';
@@ -174,7 +175,7 @@ function renderEntries() {
   const selected = day();
   const date = new Date($('#date').value + 'T12:00:00');
   const cards = state.habits.filter(habit => habit.type === kind &&
-    (!habit.archived || selected.entries[habit.id]) && scheduleMatches(habit.schedule, date)).map(habit => {
+    (!habit.archived || selected.entries[habit.id]) && (selected.entries[habit.id]?.count > 0 || scheduleMatches(habit.schedule, date))).map(habit => {
     const card = element('article', '', 'entry');
     const heading = element('div', '', 'row');
     const count = element('input');
@@ -233,7 +234,7 @@ function renderHabits() {
       renderActionLinks();
       renderEntries();
     };
-    row.append(element('strong', habit.title + ' · ' + number.format(habit.weight) + ' امتیاز'), toggle);
+    row.append(element('strong', habit.title + ' · ' + number.format(habit.weight) + ' امتیاز'), editButton(habit), toggle);
     item.append(row);
     return item;
   }));
@@ -420,18 +421,60 @@ for (const button of document.querySelectorAll('[data-period]')) {
     renderReports();
   };
 }
+function resetBasicForm() {
+  editingItem = null;
+  const {section, label} = basicCategory;
+  const form = $('#' + section + '-form');
+  form.reset();
+  $('#' + section + '-settings-title').textContent = 'تعریف ' + label;
+  form.querySelector('[type="submit"]').textContent = 'افزودن ' + label;
+  $('#' + section + '-cancel').hidden = true;
+  if (section === 'action') renderActionLinks();
+}
+
+function editButton(item) {
+  const button = element('button', 'ویرایش');
+  button.setAttribute('aria-label', 'ویرایش ' + item.title);
+  button.onclick = () => {
+    resetBasicForm();
+    editingItem = item;
+    const {section, label} = basicCategory;
+    const form = $('#' + section + '-form');
+    form.elements.title.value = item.title;
+    if (section === 'habit') {
+      form.elements.weight.value = item.weight;
+      if (item.schedule) {
+        for (const {name} of scheduleGroups) {
+          for (const box of form.querySelectorAll('[name="' + name + '"]')) {
+            box.checked = item.schedule[name].includes(Number(box.value));
+            box.onchange();
+          }
+        }
+      }
+    } else {
+      renderActionLinks();
+    }
+    $('#' + section + '-settings-title').textContent = 'ویرایش ' + label;
+    form.querySelector('[type="submit"]').textContent = 'ذخیرهٔ تغییرات';
+    $('#' + section + '-cancel').hidden = false;
+    form.elements.title.focus();
+  };
+  return button;
+}
+
+$('#habit-cancel').onclick = resetBasicForm;
+$('#action-cancel').onclick = resetBasicForm;
+
 for (const button of document.querySelectorAll('[data-basics]')) {
   button.onclick = () => {
     basicCategory = basicTypes[button.dataset.basics];
-    const {section, label} = basicCategory;
+    const {section} = basicCategory;
     for (const other of document.querySelectorAll('[data-basics]')) {
       other.setAttribute('aria-pressed', String(other === button));
     }
     $('#habit-settings').hidden = section !== 'habit';
     $('#action-settings').hidden = section !== 'action';
-    $('#' + section + '-settings-title').textContent = 'تعریف ' + label;
-    $('#' + section + '-form button').textContent = 'افزودن ' + label;
-    $('#' + section + '-form').reset();
+    resetBasicForm();
     if (section === 'habit') renderHabits();
     else renderActionDefinitions();
   };
@@ -444,9 +487,10 @@ $('#habit-form').onsubmit = event => {
   if (!title) return;
   const schedule = Object.fromEntries(scheduleGroups.map(({name}) =>
     [name, data.getAll(name).map(Number)]));
-  state.habits.push({id: crypto.randomUUID(), title, type: basicCategory.type,
-    weight: Number(data.get('weight')), schedule});
-  event.target.reset();
+  const values = {title, weight: Number(data.get('weight')), schedule};
+  if (editingItem) Object.assign(editingItem, values);
+  else state.habits.push({id: crypto.randomUUID(), type: basicCategory.type, ...values});
+  resetBasicForm();
   save();
   renderHabits();
   renderActionLinks();
@@ -454,16 +498,17 @@ $('#habit-form').onsubmit = event => {
 };
 function renderActionLinks() {
   const links = $('#action-links');
-  const active = state.habits.filter(habit => !habit.archived);
+  const active = state.habits.filter(habit => !habit.archived || editingItem?.habitIds?.includes(habit.id));
   links.replaceChildren(...active.map(habit => {
     const checkbox = element('input');
     checkbox.type = 'checkbox';
     checkbox.name = 'habit';
     checkbox.value = habit.id;
+    checkbox.checked = editingItem?.habitIds?.includes(habit.id) ?? false;
     return inputLabel((habit.type === 1 ? 'خوبی · ' : 'بدی · ') + habit.title, checkbox);
   }));
   if (!active.length) links.append(element('p', 'ابتدا یک رفتار تعریف یا فعال کنید.'));
-  $('#action-form button').disabled = !active.length;
+  $('#action-form [type="submit"]').disabled = !active.length;
 }
 
 function actionType(action) {
@@ -475,7 +520,7 @@ function renderActionDefinitions() {
     const item = element('li');
     const names = state.habits.filter(habit => action.habitIds.includes(habit.id)).map(habit => habit.title);
     item.append(element('strong', actionType(action) + ' · ' + action.title),
-      element('p', names.join('، ')));
+      element('p', names.join('، ')), editButton(action));
     return item;
   }));
 }
@@ -517,8 +562,9 @@ $('#action-form').onsubmit = event => {
     $('#status').textContent = 'عنوان و دست‌کم یک رفتار مرتبط را وارد کنید.';
     return;
   }
-  state.actions.push({id: crypto.randomUUID(), title, type: basicCategory.type, habitIds, pending: 0});
-  event.target.reset();
+  if (editingItem) Object.assign(editingItem, {title, habitIds});
+  else state.actions.push({id: crypto.randomUUID(), title, type: basicCategory.type, habitIds, pending: 0});
+  resetBasicForm();
   save();
   renderActionDefinitions();
 };
