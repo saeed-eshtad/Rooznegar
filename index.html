@@ -13,10 +13,11 @@
 <body>
 <main>
 <header><span class="brand">✦ روزنگار</span><button id="install" hidden>نصب برنامه</button></header>
-<section class="hero"><p>دفتر محاسبهٔ نفس</p><h1>مرور رفتارهای روزانه</h1><p>لحظه‌ای برای مرور رفتارها، شکرگزاری و جبران.</p></section>
+<section class="hero"><p>دفتر محاسبهٔ نفس</p><h1>مرور رفتارهای روزانه</h1></section>
 <nav aria-label="بخش‌ها">
 <button data-tab="daily" aria-current="page">خانه</button>
-<button data-tab="habits">رفتارها</button>
+<button data-tab="habits">اطلاعات پایه</button>
+<button data-tab="actions">پاداش–جریمه</button>
 <button data-tab="reports">گزارش</button>
 <button data-tab="follow">جبران</button>
 </nav>
@@ -34,18 +35,30 @@
 <button data-kind="-1" aria-pressed="false">بدی‌ها</button>
 </div>
 <div id="entries"></div>
-<label class="note">امروز بابت چه چیزی شکرگزارم؟<textarea id="gratitude" rows="3" placeholder="یادداشت شکرگزاری"></textarea></label>
 </section>
 <section id="habits" class="panel" hidden>
-<h2>رفتارهای من</h2>
+<h2>اطلاعات پایه</h2>
+<h3>تعریف خوبی‌ها و بدی‌ها</h3>
 <form id="habit-form">
 <label>نام رفتار <input name="title" required maxlength="80"></label>
 <label>نوع <select name="type"><option value="1">رفتار خوب</option><option value="-1">رفتار نیازمند اصلاح</option></select></label>
 <label>امتیاز هر بار <input name="weight" type="number" min="1" max="100" value="1" required></label>
-<label>پاداش یا اقدام جبرانی <input name="action" maxlength="120"></label>
 <button class="primary">افزودن رفتار</button>
 </form>
 <ul id="habit-list"></ul>
+<h3>تعریف پاداش و جریمه</h3>
+<form id="action-form">
+<label>عنوان <input name="title" required maxlength="120"></label>
+<label>نوع <select name="type"><option value="1">پاداش</option><option value="-1">جریمه</option></select></label>
+<fieldset><legend>رفتارهای مرتبط</legend><div id="action-links"></div></fieldset>
+<button class="primary">افزودن پاداش یا جریمه</button>
+</form>
+<ul id="action-definitions"></ul>
+</section>
+<section id="actions" class="panel" hidden>
+<h2 tabindex="-1">پاداش–جریمه</h2>
+<p>با «−» یک مورد انجام‌شده را کم کنید. با «+» تعداد را افزایش دهید.</p>
+<ul id="action-queue"></ul>
 </section>
 <section id="reports" class="panel" hidden>
 <div class="row"><h2>کارنامه</h2><label>بازه <select id="period"><option value="1" selected>روزانه</option><option value="7">هفتگی</option><option value="30">۳۰ روزه</option><option value="365">۳۶۵ روزه</option></select></label></div>
@@ -61,7 +74,7 @@
 </form>
 <ul id="follow-list"></ul>
 </section>
-<footer>یادداشت‌ها در همین مرورگر ذخیره می‌شوند.<p id="status" role="status"></p></footer>
+<footer>اطلاعات در همین مرورگر ذخیره می‌شوند.<p id="status" role="status"></p></footer>
 </main>
 </body>
 </html>

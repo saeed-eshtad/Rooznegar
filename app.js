@@ -15,6 +15,7 @@ const state = JSON.parse(localStorage.getItem(key) || 'null') || {
   days: {},
   follow: []
 };
+state.actions ??= [];
 const day = () => state.days[$('#date').value] ??= {entries: {}, gratitude: ''};
 $('#date').value = iso(new Date());
 
@@ -42,7 +43,6 @@ function inputLabel(text, input) {
 
 function renderEntries() {
   const selected = day();
-  $('#gratitude').value = selected.gratitude;
   const cards = state.habits.filter(habit => habit.type === kind &&
     (!habit.archived || selected.entries[habit.id])).map(habit => {
     const card = element('article', '', 'entry');
@@ -52,16 +52,25 @@ function renderEntries() {
     count.min = '0';
     count.max = '999';
     count.value = selected.entries[habit.id]?.count || 0;
-    const note = element('textarea');
-    note.rows = 2;
-    note.value = selected.entries[habit.id]?.note || '';
     const update = () => {
       if (!count.validity.valid) return;
-      selected.entries[habit.id] = {count: Number(count.value), note: note.value};
+      const entry = selected.entries[habit.id] ??= {count: 0};
+      const next = Number(count.value);
+      const change = next - entry.count;
+      if (!change) return;
+      entry.count = next;
+      entry.credits ??= {};
+      for (const action of state.actions) {
+        const previous = entry.credits[action.id] || 0;
+        const delta = change < 0 ? -Math.min(previous, -change) :
+          action.habitIds.includes(habit.id) ? change : 0;
+        if (!delta) continue;
+        entry.credits[action.id] = previous + delta;
+        action.pending = Math.max(0, action.pending + delta);
+      }
       save();
     };
     count.addEventListener('input', update);
-    note.addEventListener('input', update);
     const counter = element('div', '', 'counter');
     count.setAttribute('aria-label', 'تعداد ' + habit.title);
     for (const [step, symbol, label] of [[1, '+', 'افزایش'], [-1, '−', 'کاهش']]) {
@@ -76,11 +85,10 @@ function renderEntries() {
     }
     heading.append(element('strong', habit.title), counter);
     const score = (habit.type > 0 ? '+' : '−') + number.format(habit.weight);
-    card.append(heading, element('p', score + ' امتیاز برای هر بار' + (habit.action ? ' · ' + habit.action : '')),
-      inputLabel('یادداشت رفتار', note));
+    card.append(heading, element('p', score + ' امتیاز برای هر بار'));
     return card;
   });
-  $('#entries').replaceChildren(...(cards.length ? cards : [element('p', 'از بخش رفتارها یک رفتار اضافه کنید.')]));
+  $('#entries').replaceChildren(...(cards.length ? cards : [element('p', 'از بخش اطلاعات پایه یک رفتار اضافه کنید.')]));
 }
 
 function renderHabits() {
@@ -92,9 +100,10 @@ function renderHabits() {
       habit.archived = !habit.archived;
       save();
       renderHabits();
+      renderActionLinks();
       renderEntries();
     };
-    row.append(element('strong', habit.title), toggle);
+    row.append(element('strong', habit.title + ' · ' + number.format(habit.weight) + ' امتیاز'), toggle);
     item.append(row);
     return item;
   }));
@@ -188,22 +197,90 @@ for (const button of document.querySelectorAll('[data-kind]')) {
   };
 }
 $('#period').onchange = renderReports;
-$('#gratitude').oninput = event => {
-  day().gratitude = event.target.value;
-  save();
-};
 $('#habit-form').onsubmit = event => {
   event.preventDefault();
   const data = new FormData(event.target);
   const title = data.get('title').trim();
   if (!title) return;
   state.habits.push({id: crypto.randomUUID(), title, type: Number(data.get('type')),
-    weight: Number(data.get('weight')), action: data.get('action').trim()});
+    weight: Number(data.get('weight'))});
   event.target.reset();
   save();
   renderHabits();
+  renderActionLinks();
   renderEntries();
 };
+function renderActionLinks() {
+  const links = $('#action-links');
+  const active = state.habits.filter(habit => !habit.archived);
+  links.replaceChildren(...active.map(habit => {
+    const checkbox = element('input');
+    checkbox.type = 'checkbox';
+    checkbox.name = 'habit';
+    checkbox.value = habit.id;
+    return inputLabel((habit.type === 1 ? 'خوبی · ' : 'بدی · ') + habit.title, checkbox);
+  }));
+  if (!active.length) links.append(element('p', 'ابتدا یک رفتار تعریف یا فعال کنید.'));
+  $('#action-form button').disabled = !active.length;
+}
+
+function actionType(action) {
+  return action.type === 1 ? 'پاداش' : 'جریمه';
+}
+
+function renderActionDefinitions() {
+  $('#action-definitions').replaceChildren(...state.actions.map(action => {
+    const item = element('li');
+    const names = state.habits.filter(habit => action.habitIds.includes(habit.id)).map(habit => habit.title);
+    item.append(element('strong', actionType(action) + ' · ' + action.title),
+      element('p', names.join('، ')));
+    return item;
+  }));
+}
+
+function renderActionQueue() {
+  const queue = $('#action-queue');
+  queue.replaceChildren(...state.actions.filter(action => action.pending > 0).map(action => {
+    const item = element('li', '', 'row');
+    const counter = element('div', '', 'counter');
+    const total = element('output', number.format(action.pending));
+    const increase = element('button', '+');
+    const decrease = element('button', '−');
+    increase.setAttribute('aria-label', 'افزایش تعداد ' + action.title);
+    decrease.setAttribute('aria-label', 'ثبت یک بار انجام ' + action.title);
+    increase.onclick = () => adjust(1);
+    decrease.onclick = () => adjust(-1);
+    function adjust(change) {
+      action.pending += change;
+      save();
+      total.textContent = number.format(action.pending);
+      if (!action.pending) {
+        renderActionQueue();
+        $('#actions h2').focus();
+      }
+    }
+    counter.append(increase, total, decrease);
+    item.append(element('strong', actionType(action) + ' · ' + action.title), counter);
+    return item;
+  }));
+  if (!queue.children.length) queue.append(element('li', 'پاداش یا جریمه‌ای برای انجام وجود ندارد.'));
+}
+
+$('#action-form').onsubmit = event => {
+  event.preventDefault();
+  const data = new FormData(event.target);
+  const title = data.get('title').trim();
+  const habitIds = data.getAll('habit');
+  if (!title || !habitIds.length) {
+    $('#status').textContent = 'عنوان و دست‌کم یک رفتار مرتبط را وارد کنید.';
+    return;
+  }
+  state.actions.push({id: crypto.randomUUID(), title, type: Number(data.get('type')), habitIds, pending: 0});
+  event.target.reset();
+  save();
+  renderActionDefinitions();
+};
+
 $('#follow-form').onsubmit = event => {
   event.preventDefault();
   const data = new FormData(event.target);
@@ -221,6 +298,7 @@ for (const button of document.querySelectorAll('nav button')) {
     button.setAttribute('aria-current', 'page');
     for (const panel of document.querySelectorAll('.panel')) panel.hidden = panel.id !== button.dataset.tab;
     $('#day-picker').hidden = !['daily', 'reports'].includes(button.dataset.tab);
+    if (button.dataset.tab === 'actions') renderActionQueue();
     if (button.dataset.tab === 'reports') {
       $('#period').value = '1';
       renderReports();
@@ -240,3 +318,5 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').ca
 selectDay(iso(new Date()));
 renderHabits();
 renderFollow();
+renderActionLinks();
+renderActionDefinitions();

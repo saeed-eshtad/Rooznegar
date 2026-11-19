@@ -21,3 +21,8 @@ footer{font-size:.8rem;margin-top:18px;color:#455a51}input[type=checkbox]{width:
 .behavior-tabs [data-kind="-1"][aria-pressed=true]{background:#8d3e30}
 .counter{display:flex;align-items:center;gap:4px}.counter button{width:44px}
 .entry .counter input{width:60px;text-align:center;padding-inline:3px}
+nav{grid-template-columns:repeat(5,minmax(0,1fr))}
+nav button{font-size:clamp(.7rem,2.6vw,.95rem)}
+fieldset{min-inline-size:0;border:1px solid #c7d0c4;border-radius:12px}
+#action-links label{display:flex;align-items:center;gap:8px;min-height:44px}
+.counter output{min-width:36px;text-align:center;font-weight:bold}
