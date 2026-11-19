@@ -36,3 +36,7 @@ fieldset{min-inline-size:0;border:1px solid #c7d0c4;border-radius:12px}
 .pareto-list progress{display:block;margin-block:6px}
 .pareto.bad progress{accent-color:#a24e39}
 .pareto-list small{color:#455a51}
+#habit-schedule{display:grid;gap:10px}
+.schedule-field label{display:flex;flex-direction:row-reverse;justify-content:flex-end;align-items:center;gap:8px;min-height:44px}
+.schedule-field small{display:block;margin-block-end:6px}
+.schedule-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:0 8px}

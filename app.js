@@ -19,6 +19,20 @@ let activeTab = 'daily';
 const persianDay = new Intl.DateTimeFormat('fa-IR-u-ca-persian-nu-latn', {day: 'numeric'});
 const iso = date => [date.getFullYear(), date.getMonth() + 1, date.getDate()]
   .map((part, index) => String(part).padStart(index ? 2 : 4, '0')).join('-');
+const scheduleDate = new Intl.DateTimeFormat('fa-IR-u-ca-persian-nu-latn', {
+  month: 'numeric', day: 'numeric'
+});
+const scheduleGroups = [
+  {name: 'months', title: 'ماه‌های ارزیابی', labels: [
+    'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+    'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
+  ]},
+  {name: 'weeks', title: 'هفته‌های ماه', labels: ['اول', 'دوم', 'سوم', 'چهارم', 'پنجم'],
+    hint: 'هفتهٔ اول روزهای ۱ تا ۷ ماه است و هفتهٔ پنجم از روز ۲۹ آغاز می‌شود.'},
+  {name: 'weekdays', title: 'روزهای هفته', labels: [
+    'شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'
+  ]}
+];
 const state = JSON.parse(localStorage.getItem(key) || 'null') || (demo ? makeDemoState() : {
   habits: [
     {id: 'kindness', title: 'کمک به دیگران', type: 1, weight: 1, action: ''},
@@ -107,10 +121,60 @@ function inputLabel(text, input) {
   return label;
 }
 
+function scheduleMatches(schedule, date) {
+  if (!schedule) return true;
+  const parts = scheduleDate.formatToParts(date);
+  const month = Number(parts.find(part => part.type === 'month').value);
+  const dayOfMonth = Number(parts.find(part => part.type === 'day').value);
+  const week = Math.ceil(dayOfMonth / 7);
+  const weekday = (date.getDay() + 1) % 7 + 1;
+  return schedule.months.includes(month) && schedule.weeks.includes(week) &&
+    schedule.weekdays.includes(weekday);
+}
+
+function renderHabitSchedule() {
+  const fields = scheduleGroups.map(({name, title, labels, hint}) => {
+    const field = element('fieldset', '', 'schedule-field');
+    const all = element('input');
+    all.type = 'checkbox';
+    all.defaultChecked = true;
+    const choices = element('div', '', 'schedule-choices');
+    const boxes = labels.map((label, index) => {
+      const input = element('input');
+      input.type = 'checkbox';
+      input.name = name;
+      input.value = index + 1;
+      input.defaultChecked = true;
+      choices.append(inputLabel(label, input));
+      return input;
+    });
+
+    function syncSelection() {
+      const count = boxes.filter(box => box.checked).length;
+      all.checked = count === boxes.length;
+      all.indeterminate = count > 0 && count < boxes.length;
+      boxes[0].setCustomValidity(count ? '' : 'دست‌کم یک گزینه انتخاب کنید.');
+    }
+
+    all.onchange = () => {
+      for (const box of boxes) box.checked = all.checked;
+      syncSelection();
+    };
+    for (const box of boxes) box.onchange = syncSelection;
+    $('#habit-form').addEventListener('reset', () => queueMicrotask(syncSelection));
+    field.append(element('legend', title), inputLabel('انتخاب همه', all));
+    if (hint) field.append(element('small', hint));
+    field.append(choices);
+    return field;
+  });
+  $('#habit-schedule').replaceChildren(...fields);
+}
+
 function renderEntries() {
   const selected = day();
+  const date = new Date($('#date').value + 'T12:00:00');
   const cards = state.habits.filter(habit => habit.type === kind &&
-    (!habit.archived || selected.entries[habit.id])).map(habit => {
+    (!habit.archived || selected.entries[habit.id]) && scheduleMatches(habit.schedule, date)).map(habit => {
     const card = element('article', '', 'entry');
     const heading = element('div', '', 'row');
     const count = element('input');
@@ -154,7 +218,7 @@ function renderEntries() {
     card.append(heading, element('p', score + ' امتیاز برای هر بار'));
     return card;
   });
-  $('#entries').replaceChildren(...(cards.length ? cards : [element('p', 'از بخش اطلاعات پایه یک رفتار اضافه کنید.')]));
+  $('#entries').replaceChildren(...(cards.length ? cards : [element('p', 'برای این تاریخ رفتاری در این دسته برنامه‌ریزی نشده است.')]));
 }
 
 function renderHabits() {
@@ -378,8 +442,10 @@ $('#habit-form').onsubmit = event => {
   const data = new FormData(event.target);
   const title = data.get('title').trim();
   if (!title) return;
+  const schedule = Object.fromEntries(scheduleGroups.map(({name}) =>
+    [name, data.getAll(name).map(Number)]));
   state.habits.push({id: crypto.randomUUID(), title, type: basicCategory.type,
-    weight: Number(data.get('weight'))});
+    weight: Number(data.get('weight')), schedule});
   event.target.reset();
   save();
   renderHabits();
@@ -492,3 +558,4 @@ if (demo) {
 renderHabits();
 renderActionLinks();
 renderActionDefinitions();
+renderHabitSchedule();
