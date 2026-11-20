@@ -24,6 +24,7 @@ footer{font-size:.8rem;margin-top:18px;color:#455a51}input[type=checkbox]{width:
 nav button{font-size:clamp(.7rem,2.6vw,.95rem)}
 fieldset{min-inline-size:0;border:1px solid #c7d0c4;border-radius:12px}
 #action-links label{display:flex;align-items:center;gap:8px;min-height:44px}
+#action-links input[type=checkbox]{order:-1;flex-shrink:0;margin:0}
 .counter output{min-width:36px;text-align:center;font-weight:bold}
 .report-periods{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
 .report-periods button{padding:6px 3px;font-size:clamp(.72rem,2.8vw,.95rem)}
