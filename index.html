@@ -25,6 +25,7 @@
 <button data-tab="daily" aria-current="page">خانه</button>
 <button data-tab="actions">پاداش–جریمه</button>
 <button data-tab="reports" id="reports-tab">گزارش</button>
+<button data-tab="backup">پشتیبان‌گیری</button>
 <button data-tab="habits">اطلاعات پایه</button>
 </nav>
 <section id="day-picker" class="panel" aria-label="انتخاب بازه">
@@ -99,6 +100,18 @@
 <h3 id="bad-pareto-title">پارتوی بدی‌ها</h3>
 <div id="bad-pareto"></div>
 </section>
+</section>
+<section id="backup" class="panel" hidden>
+<h2>پشتیبان‌گیری</h2>
+<p>برای نگهداری اطلاعات یا انتقال آن‌ها به دستگاه دیگر، فایل پشتیبان را دانلود کنید.</p>
+<button type="button" id="export-backup" class="primary">دانلود فایل پشتیبان</button>
+<h3>بازیابی اطلاعات</h3>
+<form id="restore-backup">
+<label>فایل پشتیبان روزنگار <input name="backup" type="file" accept=".json,application/json" required></label>
+<p>با بازیابی، اطلاعات فعلی با محتوای فایل جایگزین می‌شوند. ابتدا یک پشتیبان از اطلاعات فعلی بگیرید.</p>
+<button type="submit">بازیابی از فایل</button>
+</form>
+<p id="backup-status" role="status"></p>
 </section>
 <footer>اطلاعات در همین مرورگر ذخیره می‌شوند.<p id="status" role="status"></p></footer>
 </main>

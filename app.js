@@ -34,17 +34,35 @@ const scheduleGroups = [
     'شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'
   ]}
 ];
-const state = JSON.parse(localStorage.getItem(key) || 'null') || (demo ? makeDemoState() : {
-  habits: [
-    {id: 'kindness', title: 'کمک به دیگران', type: 1, weight: 1, action: ''},
-    {id: 'prayer', title: 'نماز اول وقت', type: 1, weight: 1, action: ''},
-    {id: 'anger', title: 'تندی در گفتار', type: -1, weight: 1, action: 'در صورت نیاز عذرخواهی کنم'}
-  ],
-  days: {}
-});
+const state = JSON.parse(localStorage.getItem(key) || 'null') ||
+  (demo ? makeDemoState() : makeStarterState());
 state.actions ??= [];
 const day = () => state.days[$('#date').value] ??= {entries: {}, gratitude: ''};
 $('#date').value = iso(new Date());
+
+function makeStarterState() {
+  const examples = [
+    [1, 'کمک به دیگران', 2, 'وقت آزاد برای سرگرمی دلخواه', 1],
+    [1, 'نماز اول وقت', 3, 'استراحت با یک فنجان چای', 1],
+    [1, 'مطالعه', 2, 'گوش دادن به موسیقی دلخواه', 1],
+    [1, 'ورزش', 2, 'قدم‌زدن در پارک', 1],
+    [1, 'وفای به عهد', 3, 'تماشای یک برنامهٔ دلخواه', 1],
+    [-1, 'تندی در گفتار', 3, 'عذرخواهی و گفت‌وگوی آرام', 1],
+    [-1, 'دیر رسیدن', 2, 'تنظیم یادآور برای قرار بعدی', 1],
+    [-1, 'به‌تعویق‌انداختن کارها', 2, 'انجام یک کار عقب‌افتاده', 1],
+    [-1, 'اسراف غذا', 2, 'برنامه‌ریزی برای استفاده از غذای باقی‌مانده', 1],
+    [-1, 'بدقولی', 3, 'صلوات', 100]
+  ];
+  const habits = [];
+  const actions = [];
+  for (const [index, [type, title, weight, actionTitle, quantity]] of examples.entries()) {
+    const id = 'starter-habit-' + index;
+    habits.push({id, type, title, weight});
+    actions.push({id: 'starter-action-' + index, type, title: actionTitle,
+      habitIds: [id], quantity, pending: 0});
+  }
+  return {habits, actions, days: {}};
+}
 
 function makeDemoState() {
   const examples = [
@@ -178,7 +196,7 @@ function updateActionCredits(entry, habit, change) {
     const batches = Array.isArray(recorded) ? recorded :
       recorded ? [{count: recorded, quantity: 1}] : [];
     let units = 0;
-    if (change > 0 && action.type === habit.type && action.habitIds.includes(habit.id)) {
+    if (change > 0 && !action.archived && action.type === habit.type && action.habitIds.includes(habit.id)) {
       const quantity = action.quantity ?? 1;
       const last = batches.at(-1);
       if (last?.quantity === quantity) last.count += change;
@@ -245,20 +263,27 @@ function renderEntries() {
   $('#entries').replaceChildren(...(cards.length ? cards : [element('p', 'برای این تاریخ رفتاری در این دسته برنامه‌ریزی نشده است.')]));
 }
 
+function definitionControls(item, refresh) {
+  const controls = element('div', '', 'definition-controls');
+  const toggle = element('button', item.archived ? 'فعال‌سازی' : 'بایگانی');
+  toggle.onclick = () => {
+    item.archived = !item.archived;
+    save();
+    refresh();
+  };
+  controls.append(editButton(item), toggle);
+  return controls;
+}
+
 function renderHabits() {
   $('#habit-list').replaceChildren(...state.habits.filter(habit => habit.type === basicCategory.type).map(habit => {
     const item = element('li');
-    const row = element('div', '', 'row');
-    const toggle = element('button', habit.archived ? 'فعال‌سازی' : 'بایگانی');
-    toggle.onclick = () => {
-      habit.archived = !habit.archived;
-      save();
-      renderHabits();
-      renderActionLinks();
-      renderEntries();
-    };
-    row.append(element('strong', habit.title + ' · ' + number.format(habit.weight) + ' امتیاز'), editButton(habit), toggle);
-    item.append(row);
+    item.append(element('strong', habit.title + ' · ' + number.format(habit.weight) + ' امتیاز'),
+      definitionControls(habit, () => {
+        renderHabits();
+        renderActionLinks();
+        renderEntries();
+      }));
     return item;
   }));
 }
@@ -547,7 +572,7 @@ function renderActionDefinitions() {
       .map(habit => habit.title);
     item.append(element('strong', actionType(action) + ' · ' + action.title),
       element('p', number.format(action.quantity ?? 1) + ' بار به‌ازای هر ثبت'),
-      element('p', names.join('، ') || 'رفتار مرتبط انتخاب نشده است.'), editButton(action));
+      element('p', names.join('، ') || 'رفتار مرتبط انتخاب نشده است.'), definitionControls(action, renderActionDefinitions));
     return item;
   }));
 }
@@ -597,6 +622,80 @@ $('#action-form').onsubmit = event => {
   resetBasicForm();
   save();
   renderActionDefinitions();
+};
+
+function validBackup(data) {
+  const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+  const integer = (value, min, max = Number.MAX_SAFE_INTEGER) =>
+    Number.isSafeInteger(value) && value >= min && value <= max;
+  const id = value => typeof value === 'string' && /^[a-z0-9-]+$/i.test(value);
+  const definition = item => record(item) && id(item.id) &&
+    typeof item.title === 'string' && item.title.trim() && [1, -1].includes(item.type);
+  if (!record(data) || !Array.isArray(data.habits) || !Array.isArray(data.actions) ||
+      !record(data.days)) return false;
+  const validSchedule = schedule => schedule == null || (record(schedule) &&
+    scheduleGroups.every(({name, labels}) => {
+      const values = schedule[name];
+      return Array.isArray(values) && values.length > 0 &&
+        values.every(value => integer(value, 1, labels.length));
+    }));
+  if (!data.habits.every(habit => definition(habit) && integer(habit.weight, 1, 100) &&
+      validSchedule(habit.schedule))) return false;
+  const habitIds = new Set(data.habits.map(habit => habit.id));
+  if (habitIds.size !== data.habits.length || !data.actions.every(action => definition(action) &&
+      integer(action.pending, 0) && integer(action.quantity ?? 1, 1, 1000000) &&
+      Array.isArray(action.habitIds) && action.habitIds.every(habit => habitIds.has(habit)))) return false;
+  const actionIds = new Set(data.actions.map(action => action.id));
+  if (actionIds.size !== data.actions.length) return false;
+  const validCredit = credit => integer(credit, 0, 999) ||
+    (Array.isArray(credit) && credit.every(batch => record(batch) &&
+      integer(batch.count, 1, 999) && integer(batch.quantity, 1, 1000000)));
+  function validEntry([habit, entry]) {
+    if (!habitIds.has(habit) || !record(entry) || !integer(entry.count, 0, 999)) return false;
+    const credits = entry.credits;
+    return credits == null || (record(credits) && Object.entries(credits).every(
+      ([action, credit]) => actionIds.has(action) && validCredit(credit)));
+  }
+  return Object.entries(data.days).every(([date, day]) => /^\d{4,}-\d{2}-\d{2}$/.test(date) &&
+    record(day) && record(day.entries) && Object.entries(day.entries).every(validEntry));
+}
+
+$('#export-backup').onclick = () => {
+  const backup = {app: 'Rooznegar', version: 1, data: state};
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const link = element('a');
+  link.href = url;
+  link.download = 'Rooznegar-' + iso(new Date()) + '.json';
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+$('#restore-backup').onsubmit = async event => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const status = $('#backup-status');
+  let backup;
+  try {
+    backup = JSON.parse(await form.elements.backup.files[0].text());
+  } catch {
+    status.textContent = 'فایل پشتیبان خوانده نشد.';
+    return;
+  }
+  if (backup?.app !== 'Rooznegar' || backup.version !== 1 || !validBackup(backup.data)) {
+    status.textContent = 'ساختار یا نسخهٔ فایل پشتیبان معتبر نیست.';
+    return;
+  }
+  if (!confirm('اطلاعات فعلی با محتوای فایل پشتیبان جایگزین شود؟')) return;
+  try {
+    localStorage.setItem(key, JSON.stringify(backup.data));
+  } catch {
+    status.textContent = 'بازیابی انجام نشد. فضای ذخیره‌سازی مرورگر را بررسی کنید.';
+    return;
+  }
+  location.reload();
 };
 
 for (const button of document.querySelectorAll('nav button')) {

@@ -4,7 +4,7 @@ body{margin:0} main{max-width:740px;margin:auto;padding:20px 16px 46px}
 header,.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.brand{font-size:1.25rem;font-weight:bold}
 .hero{margin:22px 0 16px;padding:clamp(22px,6vw,45px);border-radius:28px;background:radial-gradient(ellipse at 0 0,#436950,transparent 70%),#203f37;color:#fff9e9}
 h1{font-size:clamp(1.8rem,6vw,3rem);margin:10px 0} h2{margin:0 0 12px;font-size:1.3rem} p{line-height:1.7}
-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;background:#e5e8dc;padding:5px;border-radius:16px}
+nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;background:#e5e8dc;padding:5px;border-radius:16px}
 button,input,select,textarea{font:inherit;min-height:44px;border-radius:12px;color:inherit}button{border:0;padding:8px 12px;cursor:pointer;background:#e9ede1}
 nav button{padding:6px 2px;background:transparent} nav button[aria-current],.primary{background:#234d40;color:#fff}
 :focus-visible{outline:3px solid #247658;outline-offset:2px}
@@ -40,3 +40,6 @@ fieldset{min-inline-size:0;border:1px solid #c7d0c4;border-radius:12px}
 .schedule-field label{display:flex;flex-direction:row-reverse;justify-content:flex-end;align-items:center;gap:8px;min-height:44px}
 .schedule-field small{display:block;margin-block-end:6px}
 .schedule-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:0 8px}
+
+.definition-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-block-start:8px;max-width:280px}
+nav button{overflow-wrap:anywhere}
