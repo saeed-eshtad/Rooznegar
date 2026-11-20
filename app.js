@@ -338,8 +338,11 @@ function renderReports() {
   const positive = totals.positive;
   const negative = totals.negative;
   const stats = element('div', '', 'stats');
-  stats.append(...[['مثبت', positive], ['منفی', negative], ['خالص', positive - negative]]
-    .map(([label, value]) => element('span', label + ' ' + number.format(value))));
+  stats.append(...[
+    ['مثبت', positive, 'score-positive'],
+    ['منفی', negative, 'score-negative'],
+    ['خالص', positive - negative, 'score-net']
+  ].map(([label, value, tone]) => element('span', label + ' ' + number.format(value), tone)));
   $('#summary').replaceChildren(stats);
   const chart = $('#chart');
   if (positive || negative) {
