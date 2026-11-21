@@ -606,7 +606,8 @@ function renderTrendReasonGroup(group, points, ids, type) {
       bar.max = max;
       bar.value = values[index];
       bar.setAttribute('aria-label', label);
-      row.append(element('span', label + ' · ' + number.format(values[index])), bar);
+      row.append(element('span', label), bar,
+        element('span', number.format(values[index]), 'trend-reason-count'));
       panel.append(row);
     });
   }
@@ -649,7 +650,8 @@ function renderTrends() {
     if (label != null) node.textContent = label;
     return node;
   };
-  const width = Math.max(490, 100 + points.length * 58);
+  const monthly = trendPeriod === 'month';
+  const width = monthly ? 680 : Math.max(490, 100 + points.length * 58);
   const low = Math.min(0, ...points.map(point => point.value));
   const high = Math.max(0, ...points.map(point => point.value));
   const bottom = low === high ? -1 : low;
@@ -673,7 +675,7 @@ function renderTrends() {
     list.append(element('li', label + ' · ' + number.format(value)));
   });
   values.append(list);
-  const viewport = element('div', '', 'trend-viewport');
+  const viewport = element('div', '', monthly ? 'trend-viewport trend-viewport-monthly' : 'trend-viewport');
   viewport.append(svg);
   chart.replaceChildren(viewport, values);
 }
