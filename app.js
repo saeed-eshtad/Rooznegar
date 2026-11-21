@@ -472,20 +472,11 @@ function renderReportReasons(start, end) {
   for (let current = start; current <= end; current = shiftDate(current, 1)) {
     dayReasonCounts(iso(current), counts);
   }
-  const panel = $('#report-reasons');
-  panel.replaceChildren();
-  if (!counts.size) {
-    panel.append(element('p', 'در این بازه علتی برای کارهای ثبت‌شده انتخاب نشده است.'));
-    return;
-  }
-  panel.append(element('p', 'هر علت برای هر رفتار در هر روز یک بار شمرده می‌شود.'));
-  for (const [type, title] of [[1, 'علت‌های خوبی'], [-1, 'علت‌های بدی']]) {
+  for (const [type, selector] of [[1, '#good-reasons'], [-1, '#bad-reasons']]) {
     const ranked = state.reasons.filter(reason => reason.type === type && counts.has(reason.id))
       .map(reason => ({title: reason.title, count: counts.get(reason.id)}))
       .sort((a, b) => b.count - a.count || a.title.localeCompare(b.title, 'fa'));
-    const section = element('div', '', type === -1 ? 'pareto bad' : 'pareto');
-    renderPareto(section, ranked);
-    panel.append(element('h4', title), section);
+    renderPareto($(selector), ranked);
   }
 }
 
@@ -1041,6 +1032,17 @@ $('#restore-backup').onsubmit = async event => {
   }
   location.reload();
 };
+
+const reportDetailButtons = document.querySelectorAll('[data-report-detail]');
+for (const button of reportDetailButtons) {
+  button.onclick = () => {
+    for (const tab of reportDetailButtons) {
+      const selected = tab === button;
+      tab.setAttribute('aria-pressed', String(selected));
+      $('#report-' + tab.dataset.reportDetail).hidden = !selected;
+    }
+  };
+}
 
 for (const button of document.querySelectorAll('[data-settings]')) {
   button.onclick = () => {

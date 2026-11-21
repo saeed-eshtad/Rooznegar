@@ -149,3 +149,6 @@ nav button{overflow-wrap:anywhere}
 
 .settings-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
 .settings-tabs button{padding-inline:6px}
+
+.report-details-tabs{margin-block-start:24px}
+@media (max-width:480px){.report-details-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
