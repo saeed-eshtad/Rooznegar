@@ -1133,15 +1133,26 @@ for (const button of pageTabs) {
     if (activeTab === 'trends') renderTrends();
   };
 }
+const installButton = $('#install');
+let installPrompt = null;
+installButton.hidden = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 window.addEventListener('beforeinstallprompt', event => {
   event.preventDefault();
-  const button = $('#install');
-  button.hidden = false;
-  button.onclick = async () => {
-    button.hidden = true;
-    await event.prompt();
-  };
+  installPrompt = event;
 });
+window.addEventListener('appinstalled', () => {
+  installPrompt = null;
+  installButton.hidden = true;
+});
+installButton.onclick = async () => {
+  const prompt = installPrompt;
+  installPrompt = null;
+  if (prompt) {
+    await prompt.prompt().catch(() => $('#install-guide').showModal());
+  } else {
+    $('#install-guide').showModal();
+  }
+};
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.error);
 selectDay(demo ? '2026-03-20' : iso(new Date()));
 if (demo) {

@@ -12,7 +12,13 @@
 </head>
 <body>
 <main>
-<header><span class="brand">✦ روزنگار</span><div class="header-actions"><button id="install" hidden>نصب برنامه</button><button type="button" data-tab="settings" aria-controls="settings">تنظیمات</button></div></header>
+<header><span class="brand">✦ روزنگار</span><button type="button" id="install" aria-controls="install-guide">نصب برنامه</button><button type="button" data-tab="settings" aria-controls="settings">تنظیمات</button></header>
+<dialog id="install-guide" aria-labelledby="install-title">
+<h2 id="install-title">نصب روزنگار</h2>
+<p>در اندروید، منوی مرورگر را باز کنید و «نصب برنامه» یا «افزودن به صفحهٔ اصلی» را بزنید.</p>
+<p>در آیفون، در Safari دکمهٔ اشتراک‌گذاری و سپس «افزودن به صفحهٔ اصلی» را انتخاب کنید.</p>
+<form method="dialog"><button type="submit">بستن</button></form>
+</dialog>
 <section class="hero"><p>دفتر محاسبهٔ نفس</p><h1>مرور رفتارهای روزانه</h1></section>
 <aside id="demo-tools" class="panel" hidden>
 <div class="row"><strong>نسخهٔ آزمایشی با داده‌های ساختگی</strong><a href="./">بازگشت به روزنگار شخصی</a></div>
