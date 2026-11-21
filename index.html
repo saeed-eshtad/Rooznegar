@@ -145,8 +145,18 @@
 <div id="trend-chart"></div>
 <section class="report-breakdown">
 <h3>روند علت‌های کارها</h3>
-<label id="trend-reason-field">علت <select id="trend-reason"></select></label>
-<div id="trend-reason-values"></div>
+<div class="behavior-tabs" role="group" aria-label="دستهٔ علت‌ها در روندها">
+<button type="button" data-trend-reason="1" aria-controls="trend-reasons-good" aria-pressed="true">روند علت کارهای خوب</button>
+<button type="button" data-trend-reason="-1" aria-controls="trend-reasons-bad" aria-pressed="false">روند علت کارهای بد</button>
+</div>
+<div id="trend-reasons-good" class="report-breakdown">
+<label>علت <select></select></label>
+<div class="trend-reason-values"></div>
+</div>
+<div id="trend-reasons-bad" class="report-breakdown" hidden>
+<label>علت <select></select></label>
+<div class="trend-reason-values"></div>
+</div>
 </section>
 </section>
 <section id="settings" class="panel" hidden>

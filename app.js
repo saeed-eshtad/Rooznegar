@@ -572,17 +572,22 @@ function trendPoints(date, period) {
 }
 
 function renderTrendReasons(points) {
-  const select = $('#trend-reason');
-  const panel = $('#trend-reason-values');
-  const previous = select.value;
   const ids = new Set(points.flatMap(point => [...point.reasons.keys()]));
-  const reasons = state.reasons.filter(reason => ids.has(reason.id));
+  renderTrendReasonGroup($('#trend-reasons-good'), points, ids, 1);
+  renderTrendReasonGroup($('#trend-reasons-bad'), points, ids, -1);
+}
+
+function renderTrendReasonGroup(group, points, ids, type) {
+  const select = group.querySelector('select');
+  const panel = group.querySelector('.trend-reason-values');
+  const previous = select.value;
+  const reasons = state.reasons.filter(reason => reason.type === type && ids.has(reason.id));
   select.replaceChildren(...reasons.map(reason => {
-    const option = element('option', (reason.type === 1 ? 'خوبی · ' : 'بدی · ') + reason.title);
+    const option = element('option', reason.title);
     option.value = reason.id;
     return option;
   }));
-  $('#trend-reason-field').hidden = !reasons.length;
+  group.querySelector('label').hidden = !reasons.length;
   if (ids.has(previous)) select.value = previous;
   select.onchange = renderValues;
   renderValues();
@@ -595,10 +600,9 @@ function renderTrendReasons(points) {
     const values = points.map(point => point.reasons.get(select.value) ?? 0);
     const max = Math.max(1, ...values);
     panel.replaceChildren(element('p', 'تعداد رفتارهای ثبت‌شده با علت انتخابی در هر بخش از بازه.'));
-    const negative = reasons.find(reason => reason.id === select.value)?.type === -1;
     points.forEach(({label}, index) => {
       const row = element('div', '', 'chart-row');
-      const bar = element('progress', '', negative ? 'negative' : '');
+      const bar = element('progress', '', type === -1 ? 'negative' : '');
       bar.max = max;
       bar.value = values[index];
       bar.setAttribute('aria-label', label);
@@ -606,6 +610,17 @@ function renderTrendReasons(points) {
       panel.append(row);
     });
   }
+}
+
+const trendReasonTabs = document.querySelectorAll('[data-trend-reason]');
+for (const button of trendReasonTabs) {
+  button.onclick = () => {
+    for (const tab of trendReasonTabs) {
+      const selected = tab === button;
+      tab.setAttribute('aria-pressed', String(selected));
+      $('#' + tab.getAttribute('aria-controls')).hidden = !selected;
+    }
+  };
 }
 
 function renderTrends() {
