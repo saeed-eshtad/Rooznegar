@@ -479,16 +479,38 @@ function renderReportReasons(start, end) {
     return;
   }
   panel.append(element('p', 'هر علت برای هر رفتار در هر روز یک بار شمرده می‌شود.'));
+  const max = Math.max(...counts.values());
   for (const [type, title] of [[1, 'علت‌های خوبی'], [-1, 'علت‌های بدی']]) {
     const reasons = state.reasons.filter(reason => reason.type === type && counts.has(reason.id))
       .sort((a, b) => counts.get(b.id) - counts.get(a.id) || a.title.localeCompare(b.title, 'fa'));
-    const list = element('ul');
+    panel.append(element('h4', title));
+    if (!reasons.length) {
+      panel.append(element('p', 'علتی ثبت نشده است.'));
+      continue;
+    }
+    const viewport = element('div', '', 'reason-chart-viewport');
+    viewport.dir = 'ltr';
+    viewport.tabIndex = 0;
+    viewport.setAttribute('role', 'region');
+    viewport.setAttribute('aria-label', title + '، از بیشترین به کمترین');
+    const list = element('ul', '', 'reason-chart' + (type === -1 ? ' reason-chart-negative' : ''));
+    list.setAttribute('role', 'list');
     for (const reason of reasons) {
-      const item = element('li', '', 'row');
-      item.append(element('span', reason.title), element('strong', number.format(counts.get(reason.id))));
+      const count = counts.get(reason.id);
+      const item = element('li', '', 'reason-column');
+      const plot = element('div', '', 'reason-column-plot');
+      const bar = element('div', '', 'reason-column-bar');
+      bar.style.height = (count / max * 100) + '%';
+      bar.setAttribute('aria-hidden', 'true');
+      const value = element('strong', number.format(count), 'reason-column-value');
+      const caption = element('span', reason.title, 'reason-column-caption');
+      caption.dir = 'rtl';
+      plot.append(value, bar);
+      item.append(plot, caption);
       list.append(item);
     }
-    panel.append(element('h4', title), reasons.length ? list : element('p', 'علتی ثبت نشده است.'));
+    viewport.append(list);
+    panel.append(viewport);
   }
 }
 
