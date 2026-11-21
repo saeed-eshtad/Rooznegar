@@ -146,3 +146,6 @@ nav button{overflow-wrap:anywhere}
 .reminder-banner button{background:#f2e4b8}
 .reminder-option{display:flex;align-items:center;gap:8px;min-height:44px}
 .reminder-option input{flex-shrink:0}
+
+.settings-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
+.settings-tabs button{padding-inline:6px}

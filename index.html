@@ -143,9 +143,10 @@
 </section>
 <section id="settings" class="panel" hidden>
 <h2>تنظیمات</h2>
-<div class="behavior-tabs" role="group" aria-label="بخش‌های تنظیمات">
+<div class="behavior-tabs settings-tabs" role="group" aria-label="بخش‌های تنظیمات">
 <button type="button" data-settings="backup" aria-pressed="true">بازیابی اطلاعات</button>
 <button type="button" data-settings="reminder" aria-pressed="false">یادآوری</button>
+<button type="button" data-settings="about" aria-pressed="false">درباره من</button>
 </div>
 <section id="settings-backup">
 <p>برای نگهداری اطلاعات یا انتقال آن‌ها به دستگاه دیگر، فایل پشتیبان را دانلود کنید.</p>
@@ -163,6 +164,21 @@
 <label class="reminder-option"><input type="checkbox" id="reminder-enabled"> یادآوری رفتارهای ثبت‌نشدهٔ دیروز</label>
 <p>از فردای فعال‌سازی، هنگام باز کردن یا برگشتن به روزنگار، ثبت‌های دیروز بررسی می‌شوند. ارسال اعلان هنگام بسته بودن برنامه در دسترس نیست.</p>
 <p id="reminder-status" role="status"></p>
+</section>
+<section id="settings-about" hidden>
+<h3>درباره من</h3>
+<p>روزنگار دفتر روزانهٔ محاسبهٔ نفس است. با ثبت کارهای خوب و بد می‌توانید رفتارهای خود را مرور کنید، علت‌هایشان را بهتر بشناسید و تغییراتتان را در طول زمان ببینید.</p>
+<p>برای شروع، در «خانه» یک تاریخ انتخاب کنید و تعداد دفعات هر رفتار را با دکمه‌های + و − ثبت کنید. ثبت علت اختیاری است. اطلاعات روی همین مرورگر یا دستگاه ذخیره می‌شوند.</p>
+<h4>بخش‌های روزنگار</h4>
+<ul>
+<li><strong>خانه</strong> برای ثبت تعداد و علت رفتارهای روزانه.</li>
+<li><strong>پاداش–جریمه</strong> برای پیگیری پاداش‌ها و جریمه‌های مرتبط با رفتارهای ثبت‌شده.</li>
+<li><strong>گزارش</strong> برای دیدن امتیازها، رفتارهای پرتکرار و علت‌ها در بازهٔ انتخابی.</li>
+<li><strong>روندها</strong> برای دیدن تغییر امتیاز و فراوانی علت‌ها در طول زمان.</li>
+<li><strong>اطلاعات پایه</strong> برای تعریف و مرتب‌کردن خوبی‌ها و بدی‌ها و مدیریت پاداش‌ها، جریمه‌ها و علت‌ها.</li>
+<li><strong>تنظیمات</strong> برای پشتیبان‌گیری، بازیابی اطلاعات و یادآوری درون‌برنامه‌ای.</li>
+</ul>
+<p>برای پیشنهاد یا گزارش اشکال به <a href="https://github.com/saeed-eshtad/Rooznegar/issues" target="_blank" rel="noopener noreferrer">گیت‌هاب روزنگار</a> مراجعه کنید.</p>
 </section>
 </section>
 <footer>اطلاعات در همین مرورگر ذخیره می‌شوند.<p id="status" role="status"></p></footer>
