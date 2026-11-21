@@ -349,7 +349,7 @@ function renderHabits() {
       renderEntries();
     });
     controls.classList.add('habit-controls');
-    for (const [step, caption] of [[-1, '↑ بالا'], [1, '↓ پایین']]) {
+    for (const [step, caption] of [[-1, '⬆'], [1, '⬇']]) {
       const button = element('button', caption);
       button.type = 'button';
       button.className = 'habit-move';
