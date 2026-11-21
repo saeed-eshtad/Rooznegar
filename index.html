@@ -25,6 +25,7 @@
 <button data-tab="daily" aria-current="page">خانه</button>
 <button data-tab="actions">پاداش–جریمه</button>
 <button data-tab="reports" id="reports-tab">گزارش</button>
+<button data-tab="trends">روندها</button>
 <button data-tab="habits">اطلاعات پایه</button>
 <button data-tab="backup">پشتیبانی</button>
 </nav>
@@ -100,6 +101,17 @@
 <h3 id="bad-pareto-title">پارتوی بدی‌ها</h3>
 <div id="bad-pareto"></div>
 </section>
+</section>
+<section id="trends" class="panel" hidden>
+<h2>روندها</h2>
+<div class="report-periods" role="group" aria-label="نوع روند">
+<button data-trend="day" aria-pressed="true">روزانه</button>
+<button data-trend="week" aria-pressed="false">هفتگی</button>
+<button data-trend="month" aria-pressed="false">ماهانه</button>
+<button data-trend="year" aria-pressed="false">سالانه</button>
+</div>
+<p id="trend-range"></p>
+<div id="trend-chart"></div>
 </section>
 <section id="backup" class="panel" hidden>
 <h2>پشتیبانی</h2>

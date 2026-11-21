@@ -17,6 +17,8 @@ const persianMonth = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {month: 'long
 const persianYear = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {year: 'numeric'});
 let reportPeriod = 'day';
 let activeTab = 'daily';
+let trendPeriod = 'day';
+const trendWindows = {day: 'week', week: 'month', month: 'year'};
 const persianDay = new Intl.DateTimeFormat('fa-IR-u-ca-persian-nu-latn', {day: 'numeric'});
 const iso = date => [date.getFullYear(), date.getMonth() + 1, date.getDate()]
   .map((part, index) => String(part).padStart(index ? 2 : 4, '0')).join('-');
@@ -295,7 +297,7 @@ function dayScores(date, behaviorCounts) {
     if (!entry) continue;
     scores[habit.type === 1 ? 'positive' : 'negative'] += habit.weight * entry.count;
     scores[habit.type === 1 ? 'goodCount' : 'badCount'] += entry.count;
-    behaviorCounts.set(habit.id, (behaviorCounts.get(habit.id) || 0) + entry.count);
+    behaviorCounts?.set(habit.id, (behaviorCounts.get(habit.id) || 0) + entry.count);
   }
   return scores;
 }
@@ -412,8 +414,111 @@ function renderBreakdown(good, bad) {
   panel.replaceChildren(pie, legend);
 }
 
+function trendPoints(date, period) {
+  const calendar = new Intl.DateTimeFormat('en-u-ca-persian-nu-latn', {
+    year: 'numeric', month: 'numeric', day: 'numeric'
+  });
+  const parts = value => Object.fromEntries(calendar.formatToParts(value)
+    .map(({type, value: part}) => [type, Number(part)]));
+  const totals = new Map();
+  if (period === 'year') {
+    for (const [key, record] of Object.entries(state.days)) {
+      if (!Object.values(record.entries).some(entry => entry.count > 0)) continue;
+      const year = parts(new Date(key + 'T12:00:00')).year;
+      const {positive, negative} = dayScores(key);
+      totals.set(year, (totals.get(year) ?? 0) + positive - negative);
+    }
+    if (!totals.size) return [];
+    const years = [...totals.keys()].sort((a, b) => a - b);
+    return Array.from({length: years.at(-1) - years[0] + 1}, (_, index) => {
+      const year = years[0] + index;
+      return {label: number.format(year).replace('٬', ''), value: totals.get(year) ?? 0};
+    });
+  }
+
+  const {start, end} = reportRange(date, trendWindows[period]);
+  const labels = {
+    day: scheduleGroups.find(group => group.name === 'weekdays').labels,
+    week: ['هفتهٔ ۱', 'هفتهٔ ۲', 'هفتهٔ ۳', 'هفتهٔ ۴', 'هفتهٔ ۵'],
+    month: scheduleGroups.find(group => group.name === 'months').labels
+  };
+  const points = labels[period].map(label => ({label, value: 0}));
+  for (let current = start; current <= end; current = shiftDate(current, 1)) {
+    const {month, day} = parts(current);
+    const index = period === 'day' ? (current.getDay() + 1) % 7 :
+      period === 'week' ? Math.floor((day - 1) / 7) : month - 1;
+    const {positive, negative} = dayScores(iso(current));
+    points[index].value += positive - negative;
+  }
+  return points;
+}
+
+function renderTrends() {
+  const date = new Date($('#date').value + 'T12:00:00');
+  const window = trendWindows[trendPeriod];
+  $('#day-picker').hidden = !window;
+  if (window) {
+    const {start, end, label} = reportRange(date, window);
+    renderDatePicker(date, end, label);
+    $('#trend-range').textContent = 'امتیاز خالص · ' + persianDate.formatRange(start, end);
+  } else {
+    $('#trend-range').textContent = 'امتیاز خالص · همهٔ سال‌ها';
+  }
+
+  const points = trendPoints(date, trendPeriod);
+  const chart = $('#trend-chart');
+  if (!points.length) {
+    chart.replaceChildren(element('p', 'هنوز داده‌ای برای روند سالانه ثبت نشده است.'));
+    return;
+  }
+
+  const svgNode = (tag, attributes, label) => {
+    const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, value);
+    if (label != null) node.textContent = label;
+    return node;
+  };
+  const width = Math.max(490, 100 + points.length * 58);
+  const low = Math.min(0, ...points.map(point => point.value));
+  const high = Math.max(0, ...points.map(point => point.value));
+  const bottom = low === high ? -1 : low;
+  const top = low === high ? 1 : high;
+  const y = value => 18 + 170 * (top - value) / (top - bottom);
+  const x = index => points.length === 1 ? width / 2 : width - 82 - index * (width - 120) / (points.length - 1);
+  const svg = svgNode('svg', {viewBox: '0 0 ' + width + ' 230', width, height: 230, 'aria-hidden': 'true'});
+  for (const tick of new Set([top, 0, bottom])) {
+    svg.append(svgNode('line', {x1: 16, x2: width - 68, y1: y(tick), y2: y(tick), class: tick === 0 ? 'trend-zero' : 'trend-grid'}),
+      svgNode('text', {x: width - 8, y: y(tick) + 4, 'text-anchor': 'start'}, number.format(tick)));
+  }
+  svg.append(svgNode('polyline', {points: points.map((point, index) => x(index) + ',' + y(point.value)).join(' '),
+    class: 'trend-line'}));
+  const values = element('details');
+  values.append(element('summary', 'مقادیر نمودار'));
+  const list = element('ul');
+  points.forEach(({label, value}, index) => {
+    const dot = svgNode('circle', {cx: x(index), cy: y(value), r: 4, class: 'trend-dot'});
+    dot.append(svgNode('title', {}, label + ' · ' + number.format(value)));
+    svg.append(dot, svgNode('text', {x: x(index), y: 211, 'text-anchor': 'middle'}, label));
+    list.append(element('li', label + ' · ' + number.format(value)));
+  });
+  values.append(list);
+  const viewport = element('div', '', 'trend-viewport');
+  viewport.append(svg);
+  chart.replaceChildren(viewport, values);
+}
+
+for (const button of document.querySelectorAll('[data-trend]')) {
+  button.onclick = () => {
+    trendPeriod = button.dataset.trend;
+    for (const other of document.querySelectorAll('[data-trend]')) {
+      other.setAttribute('aria-pressed', String(other === button));
+    }
+    renderTrends();
+  };
+}
+
 function renderDatePicker(date, end, label) {
-  const period = activeTab === 'reports' ? reportPeriod : 'day';
+  const period = activeTab === 'trends' ? trendWindows[trendPeriod] : activeTab === 'reports' ? reportPeriod : 'day';
   const units = {day: 'روز', week: 'هفته', month: 'ماه', year: 'سال'};
   let heading = period === 'day' ? fullPersianDate.format(date) : label;
   if (period === 'week') {
@@ -432,12 +537,13 @@ function renderDatePicker(date, end, label) {
 function selectDay(value) {
   $('#date').value = value;
   renderEntries();
-  renderReports();
+  if (activeTab === 'trends') renderTrends();
+  else renderReports();
 }
 
 function moveDate(step) {
   const date = new Date($('#date').value + 'T12:00:00');
-  const period = activeTab === 'reports' ? reportPeriod : 'day';
+  const period = activeTab === 'trends' ? trendWindows[trendPeriod] : activeTab === 'reports' ? reportPeriod : 'day';
   selectDay(iso(adjacentDate(date, period, step)));
 }
 
@@ -710,6 +816,7 @@ for (const button of document.querySelectorAll('nav button')) {
     $('#day-picker').hidden = !['daily', 'reports'].includes(activeTab);
     if (button.dataset.tab === 'actions') renderActionQueue();
     if (activeTab === 'daily' || activeTab === 'reports') renderReports();
+    if (activeTab === 'trends') renderTrends();
   };
 }
 window.addEventListener('beforeinstallprompt', event => {

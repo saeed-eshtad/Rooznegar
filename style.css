@@ -4,7 +4,7 @@ body{margin:0} main{max-width:740px;margin:auto;padding:20px 16px 46px}
 header,.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.brand{font-size:1.25rem;font-weight:bold}
 .hero{margin:22px 0 16px;padding:clamp(22px,6vw,45px);border-radius:28px;background:radial-gradient(ellipse at 0 0,#436950,transparent 70%),#203f37;color:#fff9e9}
 h1{font-size:clamp(1.8rem,6vw,3rem);margin:10px 0} h2{margin:0 0 12px;font-size:1.3rem} p{line-height:1.7}
-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;background:#e5e8dc;padding:5px;border-radius:16px}
+nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;background:#e5e8dc;padding:5px;border-radius:16px}
 button,input,select,textarea{font:inherit;min-height:44px;border-radius:12px;color:inherit}button{border:0;padding:8px 12px;cursor:pointer;background:#e9ede1}
 nav button{padding:6px 2px;background:transparent} nav button[aria-current],.primary{background:#234d40;color:#fff}
 :focus-visible{outline:3px solid #247658;outline-offset:2px}
@@ -48,3 +48,12 @@ nav button{overflow-wrap:anywhere}
 .stats .score-positive{background:#dcefe3;color:#1c5638}
 .stats .score-negative{background:#f7dfdc;color:#812e27}
 .stats .score-net{background:#e7e8ea;color:#3d4249}
+
+.trend-viewport{overflow-x:auto;margin-block:12px}
+.trend-viewport svg{display:block;min-width:100%;height:auto}
+.trend-viewport text{fill:#455a51;font-size:11px}
+.trend-grid{stroke:#d7ddd6}
+.trend-zero{stroke:#8a9b91}
+.trend-line{fill:none;stroke:#346c54;stroke-width:2.5;stroke-linejoin:round}
+.trend-dot{fill:#346c54}
+#trend-chart summary{cursor:pointer}
