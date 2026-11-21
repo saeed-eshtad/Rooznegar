@@ -10,7 +10,9 @@ const basicTypes = {
   good: {type: 1, label: 'خوبی', section: 'habit'},
   bad: {type: -1, label: 'بدی', section: 'habit'},
   reward: {type: 1, label: 'پاداش', section: 'action'},
-  penalty: {type: -1, label: 'جریمه', section: 'action'}
+  penalty: {type: -1, label: 'جریمه', section: 'action'},
+  goodReason: {type: 1, label: 'علت خوبی', section: 'reason'},
+  badReason: {type: -1, label: 'علت بدی', section: 'reason'}
 };
 let basicCategory = basicTypes.good;
 let editingItem = null;
@@ -40,6 +42,20 @@ const scheduleGroups = [
 const state = JSON.parse(localStorage.getItem(key) || 'null') ||
   (demo ? makeDemoState() : makeStarterState());
 state.actions ??= [];
+state.reasons ??= [
+  [1, [
+    'رضای خداوند', 'رضایت والدین', 'رضایت مشتری', 'رضایت همسر', 'رضایت فرزندان',
+    'رضایت همسایه', 'خودنمایی', 'ترس از طرف مقابل', 'همرنگی با سایرین',
+    'به‌خاطر میل و علاقهٔ شخصی و دلم', 'به‌خاطر حفظ آبروی خود'
+  ]],
+  [-1, [
+    'حسادت', 'کینه', 'بخل', 'غرور و تکبر', 'فخرفروشی', 'ترس', 'خجالت',
+    'همرنگی با سایرین', 'بیان صحبت و گفتگو', 'دفاع از خود', 'تحقیر طرف مقابل',
+    'انتقام از طرف مقابل', 'حفظ آبروی خود', 'تنبلی', 'عصبانیت'
+  ]]
+].flatMap(([type, titles]) => titles.map((title, index) => ({
+  id: 'reason-' + (type === 1 ? 'good' : 'bad') + '-' + index, type, title
+})));
 const day = () => state.days[$('#date').value] ??= {entries: {}, gratitude: ''};
 $('#date').value = iso(new Date());
 
@@ -261,9 +277,48 @@ function renderEntries() {
     heading.append(element('strong', habit.title), counter);
     const score = (habit.type > 0 ? '+' : '−') + number.format(habit.weight);
     card.append(heading, element('p', score + ' امتیاز برای هر بار'));
+    card.append(renderEntryReasons(selected, habit));
     return card;
   });
   $('#entries').replaceChildren(...(cards.length ? cards : [element('p', 'برای این تاریخ رفتاری در این دسته برنامه‌ریزی نشده است.')]));
+}
+
+function renderEntryReasons(selected, habit) {
+  const details = element('details', '', 'entry-reasons');
+  const chosen = new Set(selected.entries[habit.id]?.reasonIds);
+  const summary = element('summary');
+  const updateLabel = () => {
+    summary.textContent = chosen.size ? 'علت‌ها (' + number.format(chosen.size) + ')' : 'علت‌ها';
+  };
+  updateLabel();
+  details.append(summary);
+  const reasons = state.reasons.filter(reason => reason.type === habit.type &&
+    (!reason.archived || chosen.has(reason.id)));
+  if (!reasons.length) {
+    details.append(element('p', 'در اطلاعات پایه می‌توانید علت اضافه کنید.'));
+    return details;
+  }
+  const options = element('fieldset', '', 'reason-choices');
+  options.append(element('legend', 'انتخاب اختیاری برای این رفتار در این روز'));
+  for (const reason of reasons) {
+    const input = element('input');
+    input.type = 'checkbox';
+    input.checked = chosen.has(reason.id);
+    const label = element('label');
+    label.append(input, element('span', reason.title));
+    input.onchange = () => {
+      if (input.checked) chosen.add(reason.id);
+      else chosen.delete(reason.id);
+      const entry = selected.entries[habit.id] ??= {count: 0};
+      entry.reasonIds = [...chosen];
+      if (reason.archived && !input.checked) label.hidden = true;
+      updateLabel();
+      save();
+    };
+    options.append(label);
+  }
+  details.append(options);
+  return details;
 }
 
 function definitionControls(item, refresh) {
@@ -363,12 +418,45 @@ function renderReports() {
     chart.replaceChildren(element('p', 'در این بازه امتیازی ثبت نشده است.'));
   }
   renderBreakdown(totals.goodCount, totals.badCount);
+  renderReportReasons(start, end);
   const ranked = state.habits
     .map(habit => ({...habit, count: behaviorCounts.get(habit.id) || 0}))
     .filter(habit => habit.count > 0)
     .sort((a, b) => b.count - a.count || a.title.localeCompare(b.title, 'fa'));
   renderPareto($('#good-pareto'), ranked.filter(habit => habit.type === 1), totals.goodCount);
   renderPareto($('#bad-pareto'), ranked.filter(habit => habit.type === -1), totals.badCount);
+}
+
+function dayReasonCounts(date, counts) {
+  for (const entry of Object.values(state.days[date]?.entries ?? {})) {
+    if (entry.count <= 0) continue;
+    for (const id of entry.reasonIds ?? []) counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+}
+
+function renderReportReasons(start, end) {
+  const counts = new Map();
+  for (let current = start; current <= end; current = shiftDate(current, 1)) {
+    dayReasonCounts(iso(current), counts);
+  }
+  const panel = $('#report-reasons');
+  panel.replaceChildren();
+  if (!counts.size) {
+    panel.append(element('p', 'در این بازه علتی برای کارهای ثبت‌شده انتخاب نشده است.'));
+    return;
+  }
+  panel.append(element('p', 'هر علت برای هر رفتار در هر روز یک بار شمرده می‌شود.'));
+  for (const [type, title] of [[1, 'علت‌های خوبی'], [-1, 'علت‌های بدی']]) {
+    const reasons = state.reasons.filter(reason => reason.type === type && counts.has(reason.id))
+      .sort((a, b) => counts.get(b.id) - counts.get(a.id) || a.title.localeCompare(b.title, 'fa'));
+    const list = element('ul');
+    for (const reason of reasons) {
+      const item = element('li', '', 'row');
+      item.append(element('span', reason.title), element('strong', number.format(counts.get(reason.id))));
+      list.append(item);
+    }
+    panel.append(element('h4', title), reasons.length ? list : element('p', 'علتی ثبت نشده است.'));
+  }
 }
 
 function renderPareto(panel, ranked, total) {
@@ -422,18 +510,23 @@ function trendPoints(date, period) {
   const parts = value => Object.fromEntries(calendar.formatToParts(value)
     .map(({type, value: part}) => [type, Number(part)]));
   const totals = new Map();
+  function addDay(point, date) {
+    const {positive, negative} = dayScores(date);
+    point.value += positive - negative;
+    dayReasonCounts(date, point.reasons);
+  }
   if (period === 'year') {
     for (const [key, record] of Object.entries(state.days)) {
       if (!Object.values(record.entries).some(entry => entry.count > 0)) continue;
       const year = parts(new Date(key + 'T12:00:00')).year;
-      const {positive, negative} = dayScores(key);
-      totals.set(year, (totals.get(year) ?? 0) + positive - negative);
+      if (!totals.has(year)) totals.set(year, {value: 0, reasons: new Map()});
+      addDay(totals.get(year), key);
     }
     if (!totals.size) return [];
     const years = [...totals.keys()].sort((a, b) => a - b);
     return Array.from({length: years.at(-1) - years[0] + 1}, (_, index) => {
       const year = years[0] + index;
-      return {label: number.format(year).replace('٬', ''), value: totals.get(year) ?? 0};
+      return {label: number.format(year).replace('٬', ''), ...(totals.get(year) ?? {value: 0, reasons: new Map()})};
     });
   }
 
@@ -443,15 +536,51 @@ function trendPoints(date, period) {
     week: ['هفتهٔ ۱', 'هفتهٔ ۲', 'هفتهٔ ۳', 'هفتهٔ ۴', 'هفتهٔ ۵'],
     month: scheduleGroups.find(group => group.name === 'months').labels
   };
-  const points = labels[period].map(label => ({label, value: 0}));
+  const points = labels[period].map(label => ({label, value: 0, reasons: new Map()}));
   for (let current = start; current <= end; current = shiftDate(current, 1)) {
     const {month, day} = parts(current);
     const index = period === 'day' ? (current.getDay() + 1) % 7 :
       period === 'week' ? Math.floor((day - 1) / 7) : month - 1;
-    const {positive, negative} = dayScores(iso(current));
-    points[index].value += positive - negative;
+    addDay(points[index], iso(current));
   }
   return points;
+}
+
+function renderTrendReasons(points) {
+  const select = $('#trend-reason');
+  const panel = $('#trend-reason-values');
+  const previous = select.value;
+  const ids = new Set(points.flatMap(point => [...point.reasons.keys()]));
+  const reasons = state.reasons.filter(reason => ids.has(reason.id));
+  select.replaceChildren(...reasons.map(reason => {
+    const option = element('option', (reason.type === 1 ? 'خوبی · ' : 'بدی · ') + reason.title);
+    option.value = reason.id;
+    return option;
+  }));
+  $('#trend-reason-field').hidden = !reasons.length;
+  if (ids.has(previous)) select.value = previous;
+  select.onchange = renderValues;
+  renderValues();
+
+  function renderValues() {
+    if (!reasons.length) {
+      panel.replaceChildren(element('p', 'در این بازه علتی برای کارهای ثبت‌شده انتخاب نشده است.'));
+      return;
+    }
+    const values = points.map(point => point.reasons.get(select.value) ?? 0);
+    const max = Math.max(1, ...values);
+    panel.replaceChildren(element('p', 'تعداد رفتارهای ثبت‌شده با علت انتخابی در هر بخش از بازه.'));
+    const negative = reasons.find(reason => reason.id === select.value)?.type === -1;
+    points.forEach(({label}, index) => {
+      const row = element('div', '', 'chart-row');
+      const bar = element('progress', '', negative ? 'negative' : '');
+      bar.max = max;
+      bar.value = values[index];
+      bar.setAttribute('aria-label', label);
+      row.append(element('span', label + ' · ' + number.format(values[index])), bar);
+      panel.append(row);
+    });
+  }
 }
 
 function renderTrends() {
@@ -467,6 +596,7 @@ function renderTrends() {
   }
 
   const points = trendPoints(date, trendPeriod);
+  renderTrendReasons(points);
   const chart = $('#trend-chart');
   if (!points.length) {
     chart.replaceChildren(element('p', 'هنوز داده‌ای برای روند سالانه ثبت نشده است.'));
@@ -609,7 +739,7 @@ function editButton(item) {
           }
         }
       }
-    } else {
+    } else if (section === 'action') {
       form.elements.quantity.value = item.quantity ?? 1;
       renderActionLinks();
     }
@@ -623,6 +753,7 @@ function editButton(item) {
 
 $('#habit-cancel').onclick = resetBasicForm;
 $('#action-cancel').onclick = resetBasicForm;
+$('#reason-cancel').onclick = resetBasicForm;
 
 for (const button of document.querySelectorAll('[data-basics]')) {
   button.onclick = () => {
@@ -633,11 +764,46 @@ for (const button of document.querySelectorAll('[data-basics]')) {
     }
     $('#habit-settings').hidden = section !== 'habit';
     $('#action-settings').hidden = section !== 'action';
+    $('#reason-settings').hidden = section !== 'reason';
     resetBasicForm();
     if (section === 'habit') renderHabits();
-    else renderActionDefinitions();
+    else if (section === 'action') renderActionDefinitions();
+    else renderReasonDefinitions();
   };
 }
+
+function renderReasonDefinitions() {
+  $('#reason-list').replaceChildren(...state.reasons.filter(reason =>
+    reason.type === basicCategory.type && !reason.archived).map(reason => {
+    const item = element('li');
+    const controls = element('div', '', 'definition-controls');
+    const remove = element('button', 'حذف');
+    remove.setAttribute('aria-label', 'حذف ' + reason.title);
+    remove.onclick = () => {
+      if (!confirm('«' + reason.title + '» از گزینه‌های انتخاب حذف شود؟')) return;
+      reason.archived = true;
+      if (editingItem === reason) resetBasicForm();
+      save();
+      renderReasonDefinitions();
+      renderEntries();
+    };
+    controls.append(editButton(reason), remove);
+    item.append(element('strong', reason.title), controls);
+    return item;
+  }));
+}
+
+$('#reason-form').onsubmit = event => {
+  event.preventDefault();
+  const title = new FormData(event.target).get('title').trim();
+  if (!title) return;
+  if (editingItem) editingItem.title = title;
+  else state.reasons.push({id: crypto.randomUUID(), title, type: basicCategory.type});
+  resetBasicForm();
+  save();
+  renderReasonDefinitions();
+  renderEntries();
+};
 
 $('#habit-form').onsubmit = event => {
   event.preventDefault();
@@ -762,7 +928,12 @@ function validBackup(data) {
     }));
   if (!data.habits.every(habit => definition(habit) && integer(habit.weight, 1, 100) &&
       validSchedule(habit.schedule))) return false;
-  const habitIds = new Set(data.habits.map(habit => habit.id));
+  if (data.reasons != null && (!Array.isArray(data.reasons) || !data.reasons.every(definition))) return false;
+  const reasons = data.reasons ?? [];
+  const reasonsById = new Map(reasons.map(reason => [reason.id, reason.type]));
+  if (reasonsById.size !== reasons.length) return false;
+  const habitTypes = new Map(data.habits.map(habit => [habit.id, habit.type]));
+  const habitIds = new Set(habitTypes.keys());
   if (habitIds.size !== data.habits.length || !data.actions.every(action => definition(action) &&
       integer(action.pending, 0) && integer(action.quantity ?? 1, 1, 1000000) &&
       Array.isArray(action.habitIds) && action.habitIds.every(habit => habitIds.has(habit)))) return false;
@@ -773,6 +944,10 @@ function validBackup(data) {
       integer(batch.count, 1, 999) && integer(batch.quantity, 1, 1000000)));
   function validEntry([habit, entry]) {
     if (!habitIds.has(habit) || !record(entry) || !integer(entry.count, 0, 999)) return false;
+    const reasonIds = entry.reasonIds;
+    if (reasonIds != null && (!Array.isArray(reasonIds) ||
+      new Set(reasonIds).size !== reasonIds.length ||
+      !reasonIds.every(id => reasonsById.get(id) === habitTypes.get(habit)))) return false;
     const credits = entry.credits;
     return credits == null || (record(credits) && Object.entries(credits).every(
       ([action, credit]) => actionIds.has(action) && validCredit(credit)));

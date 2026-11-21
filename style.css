@@ -57,3 +57,10 @@ nav button{overflow-wrap:anywhere}
 .trend-line{fill:none;stroke:#346c54;stroke-width:2.5;stroke-linejoin:round}
 .trend-dot{fill:#346c54}
 #trend-chart summary{cursor:pointer}
+
+.basic-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
+.basic-tabs :is([data-basics="bad"],[data-basics="penalty"],[data-basics="badReason"])[aria-pressed=true]{background:#a12724}
+.entry-reasons summary{cursor:pointer;width:fit-content;border-radius:12px;padding:10px 12px;background:#e9ede1}
+.reason-choices{margin-block-start:8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:0 8px}
+.reason-choices label{display:flex;align-items:center;gap:8px;min-height:44px}
+.reason-choices input{flex-shrink:0;margin:0}
