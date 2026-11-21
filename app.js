@@ -648,8 +648,8 @@ function renderTrends() {
     if (label != null) node.textContent = label;
     return node;
   };
-  const monthly = trendPeriod === 'month';
-  const width = monthly ? 680 : Math.max(490, 100 + points.length * 58);
+  const fittedWidth = {day: 380, week: 340, month: 680}[trendPeriod];
+  const width = fittedWidth ?? Math.max(490, 100 + points.length * 58);
   const low = Math.min(0, ...points.map(point => point.value));
   const high = Math.max(0, ...points.map(point => point.value));
   const bottom = low === high ? -1 : low;
@@ -673,7 +673,7 @@ function renderTrends() {
     list.append(element('li', label + ' · ' + number.format(value)));
   });
   values.append(list);
-  const viewport = element('div', '', monthly ? 'trend-viewport trend-viewport-monthly' : 'trend-viewport');
+  const viewport = element('div', '', fittedWidth ? 'trend-viewport trend-viewport-fit' : 'trend-viewport');
   viewport.append(svg);
   chart.replaceChildren(viewport, values);
 }

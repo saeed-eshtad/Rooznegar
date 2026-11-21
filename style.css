@@ -159,7 +159,7 @@ nav button{overflow-wrap:anywhere}
 .report-details-tabs{margin-block-start:24px}
 @media (max-width:480px){.report-details-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
-.trend-viewport-monthly svg{width:100%}
+.trend-viewport-fit svg{width:100%}
 .trend-reason-values .chart-row{grid-template-columns:minmax(4rem,6.5rem) minmax(0,1fr) minmax(2rem,auto)}
 .trend-reason-values progress{min-width:0}
 .trend-reason-count{text-align:left;font-variant-numeric:tabular-nums}
