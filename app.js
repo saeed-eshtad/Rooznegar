@@ -343,13 +343,16 @@ function renderHabits() {
   const habits = state.habits.filter(habit => habit.type === basicCategory.type);
   list.replaceChildren(...habits.map((habit, index) => {
     const item = element('li', '', categoryCardClass(habit.type));
-    const heading = element('div', '', 'row');
-    const order = element('div', '', 'habit-order');
-    order.setAttribute('role', 'group');
-    order.setAttribute('aria-label', 'ترتیب ' + habit.title);
-    for (const [step, caption] of [[-1, '↑ بالا'], [1, '↓ پایین']]) {
+    const controls = definitionControls(habit, () => {
+      renderHabits();
+      renderActionLinks();
+      renderEntries();
+    });
+    controls.classList.add('habit-controls');
+    for (const [step, caption] of [[-1, 'بالا'], [1, 'پایین']]) {
       const button = element('button', caption);
       button.type = 'button';
+      button.className = 'habit-move';
       button.setAttribute('aria-label', 'انتقال ' + habit.title + (step < 0 ? ' به بالا' : ' به پایین'));
       const destination = index + step;
       const neighbor = habits[destination];
@@ -362,19 +365,14 @@ function renderHabits() {
         renderHabits();
         renderActionLinks();
         renderEntries();
-        const buttons = list.children[destination].querySelectorAll('.habit-order button');
+        const buttons = list.children[destination].querySelectorAll('.habit-move');
         const sameDirection = buttons[step < 0 ? 0 : 1];
         (sameDirection.disabled ? buttons[step < 0 ? 1 : 0] : sameDirection).focus();
       };
-      order.append(button);
+      if (step < 0) controls.prepend(button);
+      else controls.append(button);
     }
-    heading.append(element('strong', habit.title + ' · ' + number.format(habit.weight) + ' امتیاز'), order);
-    item.append(heading,
-      definitionControls(habit, () => {
-        renderHabits();
-        renderActionLinks();
-        renderEntries();
-      }));
+    item.append(element('strong', habit.title + ' · ' + number.format(habit.weight) + ' امتیاز'), controls);
     return item;
   }));
 }

@@ -137,9 +137,13 @@ nav button{overflow-wrap:anywhere}
   accent-color: var(--card-accent);
 }
 
-.habit-order {display: flex; flex-wrap: wrap; gap: 6px}
-.habit-order button {min-inline-size: 64px}
-.habit-order button:disabled {opacity: .5; cursor: default}
+.definition-controls.habit-controls {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  max-width: none;
+}
+.habit-controls button {padding-inline: 2px; font-size: clamp(.75rem, 3.5vw, 1rem); overflow-wrap: anywhere}
+.habit-move:disabled {opacity: .5; cursor: default}
 
 .reminder-banner{margin-block-start:14px;padding:8px 14px;border:1px solid #e4cf9a;border-radius:16px;background:#fff5d8}
 .reminder-banner p{margin:0}
