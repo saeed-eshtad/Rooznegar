@@ -31,7 +31,10 @@
 <section id="day-picker" class="panel" aria-label="انتخاب بازه">
 <div class="date-controls">
 <button id="prev" aria-label="روز قبل">→</button>
-<output id="selected-day" aria-live="polite"></output>
+<div class="calendar-heading" aria-live="polite">
+<output id="selected-day"></output>
+<small id="lunar-day"></small>
+</div>
 <button id="next" aria-label="روز بعد">←</button>
 </div>
 <div class="date-options"><button id="today">امروز</button><label id="date-field">انتخاب تاریخ<input id="date" type="date" required></label></div>

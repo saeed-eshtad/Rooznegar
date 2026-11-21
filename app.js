@@ -328,7 +328,7 @@ function renderReports() {
   const {start, end, label} = reportRange(date, reportPeriod);
   $('#range').textContent = label;
   $('#range').hidden = reportPeriod !== 'week';
-  renderDatePicker(date, end, label);
+  renderDatePicker(date, start, end, label);
   const totals = {positive: 0, negative: 0, goodCount: 0, badCount: 0};
   const behaviorCounts = new Map();
   for (let current = start; current <= end; current = shiftDate(current, 1)) {
@@ -340,8 +340,8 @@ function renderReports() {
   const stats = element('div', '', 'stats');
   stats.append(...[
     ['مثبت', positive, 'score-positive'],
-    ['منفی', negative, 'score-negative'],
-    ['خالص', positive - negative, 'score-net']
+    ['خالص', positive - negative, 'score-net'],
+    ['منفی', negative, 'score-negative']
   ].map(([label, value, tone]) => element('span', label + ' ' + number.format(value), tone)));
   $('#summary').replaceChildren(stats);
   const chart = $('#chart');
@@ -412,7 +412,36 @@ function renderBreakdown(good, bad) {
   panel.replaceChildren(pie, legend);
 }
 
-function renderDatePicker(date, end, label) {
+// Lunar month starts transcribed from Iran's official calendar, 1403–1405.
+const iranLunarStarts = [
+  '2024-03-12', '2024-04-10', '2024-05-10', '2024-06-08',
+  '2024-07-07', '2024-08-06', '2024-09-05', '2024-10-05',
+  '2024-11-03', '2024-12-03', '2025-01-02', '2025-01-31',
+  '2025-03-02', '2025-03-31', '2025-04-29', '2025-05-28',
+  '2025-06-27', '2025-07-26', '2025-08-25', '2025-09-24',
+  '2025-10-23', '2025-11-22', '2025-12-22', '2026-01-21',
+  '2026-02-19', '2026-03-21', '2026-04-19', '2026-05-18',
+  '2026-06-16', '2026-07-16', '2026-08-14', '2026-09-13',
+  '2026-10-12', '2026-11-11', '2026-12-11', '2027-01-10',
+  '2027-02-08', '2027-03-10'
+].map(value => Date.parse(value));
+const lunarMonthNames = [
+  'محرم', 'صفر', 'ربیع‌الاول', 'ربیع‌الثانی', 'جمادی‌الاولی', 'جمادی‌الثانیه',
+  'رجب', 'شعبان', 'رمضان', 'شوال', 'ذی‌القعده', 'ذی‌الحجه'
+];
+
+function iranLunarDate(date) {
+  const civilDate = iso(date);
+  if (civilDate < '2024-03-20' || civilDate > '2027-03-20') return '';
+  const timestamp = Date.parse(civilDate);
+  const index = iranLunarStarts.findLastIndex(start => start <= timestamp);
+  const monthOffset = index + 8;
+  const day = (timestamp - iranLunarStarts[index]) / 86400000 + 1;
+  return number.format(day) + ' ' + lunarMonthNames[monthOffset % 12] + ' ' +
+    (1445 + Math.floor(monthOffset / 12)).toLocaleString('fa-IR', {useGrouping: false});
+}
+
+function renderDatePicker(date, start, end, label) {
   const period = activeTab === 'reports' ? reportPeriod : 'day';
   const units = {day: 'روز', week: 'هفته', month: 'ماه', year: 'سال'};
   let heading = period === 'day' ? fullPersianDate.format(date) : label;
@@ -423,6 +452,11 @@ function renderDatePicker(date, end, label) {
     heading = 'هفتهٔ ' + ordinals[week - 1] + ' ' + persianMonth.format(end);
   }
   $('#selected-day').textContent = heading;
+  const firstLunar = iranLunarDate(period === 'day' ? date : start);
+  const lastLunar = period === 'day' ? firstLunar : iranLunarDate(end);
+  $('#lunar-day').textContent = firstLunar && lastLunar
+    ? (firstLunar === lastLunar ? firstLunar : firstLunar + ' تا ' + lastLunar) + ' هجری قمری'
+    : 'تاریخ قمری رسمی برای این بازه در دسترس نیست.';
   $('#prev').setAttribute('aria-label', units[period] + ' قبل');
   $('#next').setAttribute('aria-label', units[period] + ' بعد');
   $('#date-field').hidden = period !== 'day';
