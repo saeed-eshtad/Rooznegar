@@ -18,7 +18,7 @@ footer{font-size:.8rem;margin-top:18px;color:#455a51}input[type=checkbox]{width:
 .date-options{display:flex;gap:10px;align-items:end;justify-content:center;margin-top:12px}
 .behavior-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .behavior-tabs [aria-pressed=true]{background:#234d40;color:#fff}
-.behavior-tabs [data-kind="-1"][aria-pressed=true]{background:#8d3e30}
+.behavior-tabs :is([data-kind="-1"],[data-action-kind="-1"])[aria-pressed=true]{background:#8d3e30}
 .counter{display:flex;align-items:center;gap:4px}.counter button{width:44px}
 .entry .counter input{width:60px;text-align:center;padding-inline:3px}
 nav button{font-size:clamp(.7rem,2.6vw,.95rem)}

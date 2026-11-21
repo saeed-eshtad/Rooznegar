@@ -5,6 +5,7 @@ const number = new Intl.NumberFormat('fa-IR');
 const persianDate = new Intl.DateTimeFormat('fa-IR', {dateStyle: 'medium'});
 const fullPersianDate = new Intl.DateTimeFormat('fa-IR', {dateStyle: 'full'});
 let kind = 1;
+let actionKind = 1;
 const basicTypes = {
   good: {type: 1, label: 'خوبی', section: 'habit'},
   bad: {type: -1, label: 'بدی', section: 'habit'},
@@ -688,7 +689,7 @@ function renderActionDefinitions() {
 
 function renderActionQueue() {
   const queue = $('#action-queue');
-  queue.replaceChildren(...state.actions.filter(action => action.pending > 0).map(action => {
+  queue.replaceChildren(...state.actions.filter(action => action.type === actionKind && action.pending > 0).map(action => {
     const item = element('li', '', 'row');
     const counter = element('div', '', 'counter');
     const total = element('output', number.format(action.pending));
@@ -708,10 +709,21 @@ function renderActionQueue() {
       }
     }
     counter.append(increase, total, decrease);
-    item.append(element('strong', actionType(action) + ' · ' + action.title), counter);
+    item.append(element('strong', action.title), counter);
     return item;
   }));
-  if (!queue.children.length) queue.append(element('li', 'پاداش یا جریمه‌ای برای انجام وجود ندارد.'));
+  if (!queue.children.length) queue.append(element('li', actionKind === 1
+    ? 'پاداشی برای انجام وجود ندارد.' : 'جریمه‌ای برای انجام وجود ندارد.'));
+}
+
+for (const button of document.querySelectorAll('[data-action-kind]')) {
+  button.onclick = () => {
+    actionKind = Number(button.dataset.actionKind);
+    for (const other of document.querySelectorAll('[data-action-kind]')) {
+      other.setAttribute('aria-pressed', String(other === button));
+    }
+    renderActionQueue();
+  };
 }
 
 $('#action-form').onsubmit = event => {
