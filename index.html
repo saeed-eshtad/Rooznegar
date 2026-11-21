@@ -46,11 +46,13 @@
 </section>
 <section id="habits" class="panel" hidden>
 <h2>اطلاعات پایه</h2>
-<div class="report-periods" role="group" aria-label="دسته‌های اطلاعات پایه">
+<div class="report-periods basic-tabs" role="group" aria-label="دسته‌های اطلاعات پایه">
 <button type="button" data-basics="good" aria-pressed="true">خوبی‌ها</button>
 <button type="button" data-basics="bad" aria-pressed="false">بدی‌ها</button>
 <button type="button" data-basics="reward" aria-pressed="false">پاداش‌ها</button>
 <button type="button" data-basics="penalty" aria-pressed="false">جریمه‌ها</button>
+<button type="button" data-basics="goodReason" aria-pressed="false">علت خوبی</button>
+<button type="button" data-basics="badReason" aria-pressed="false">علت بدی</button>
 </div>
 <section id="habit-settings">
 <h3 id="habit-settings-title">تعریف خوبی</h3>
@@ -73,6 +75,15 @@
 <button type="button" id="action-cancel" hidden>لغو ویرایش</button>
 </form>
 <ul id="action-definitions"></ul>
+</section>
+<section id="reason-settings" hidden>
+<h3 id="reason-settings-title">تعریف علت خوبی</h3>
+<form id="reason-form">
+<label>عنوان <input name="title" required maxlength="120"></label>
+<button type="submit" class="primary">افزودن علت خوبی</button>
+<button type="button" id="reason-cancel" hidden>لغو ویرایش</button>
+</form>
+<ul id="reason-list"></ul>
 </section>
 </section>
 <section id="actions" class="panel" hidden>
@@ -105,6 +116,10 @@
 <h3 id="bad-pareto-title">پارتوی بدی‌ها</h3>
 <div id="bad-pareto"></div>
 </section>
+<section class="report-breakdown">
+<h3>علت‌های کارها</h3>
+<div id="report-reasons"></div>
+</section>
 </section>
 <section id="trends" class="panel" hidden>
 <h2>روندها</h2>
@@ -116,6 +131,11 @@
 </div>
 <p id="trend-range"></p>
 <div id="trend-chart"></div>
+<section class="report-breakdown">
+<h3>روند علت‌های کارها</h3>
+<label id="trend-reason-field">علت <select id="trend-reason"></select></label>
+<div id="trend-reason-values"></div>
+</section>
 </section>
 <section id="backup" class="panel" hidden>
 <h2>پشتیبانی</h2>
