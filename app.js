@@ -1120,9 +1120,10 @@ document.addEventListener('visibilitychange', () => {
 });
 renderReminder();
 
-for (const button of document.querySelectorAll('nav button')) {
+const pageTabs = document.querySelectorAll('button[data-tab]');
+for (const button of pageTabs) {
   button.onclick = () => {
-    for (const other of document.querySelectorAll('nav button')) other.removeAttribute('aria-current');
+    for (const other of pageTabs) other.removeAttribute('aria-current');
     button.setAttribute('aria-current', 'page');
     for (const panel of document.querySelectorAll('.panel')) panel.hidden = panel.id !== button.dataset.tab;
     activeTab = button.dataset.tab;
