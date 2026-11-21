@@ -138,11 +138,13 @@ nav button{overflow-wrap:anywhere}
 }
 
 .definition-controls.habit-controls {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(0, .7fr) repeat(2, minmax(0, 1fr)) minmax(0, .7fr);
+  align-items: center;
   gap: 4px;
   max-width: none;
 }
 .habit-controls button {padding-inline: 2px; font-size: clamp(.75rem, 3.5vw, 1rem); overflow-wrap: anywhere}
+.habit-controls .habit-move {font-size: clamp(.7rem, 3vw, .87rem)}
 .habit-move:disabled {opacity: .5; cursor: default}
 
 .reminder-banner{margin-block-start:14px;padding:8px 14px;border:1px solid #e4cf9a;border-radius:16px;background:#fff5d8}

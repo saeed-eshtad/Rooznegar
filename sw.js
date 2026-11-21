@@ -1,5 +1,5 @@
 const prefix = 'rooznegar-';
-const version = prefix + '44';
+const version = prefix + '45';
 const files = ['./', './index.html', './style.css', './app.js', './manifest.webmanifest', './icon-192.png', './icon-512.png',
   './fonts/Vazir-Regular.woff2', './fonts/Vazir-Bold.woff2'];
 self.addEventListener('install', event => {
