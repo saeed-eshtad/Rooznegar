@@ -500,7 +500,7 @@ function renderReportReasons(start, end) {
       const item = element('li', '', 'reason-column');
       const plot = element('div', '', 'reason-column-plot');
       const bar = element('div', '', 'reason-column-bar');
-      bar.style.height = (count / max * 100) + '%';
+      bar.style.setProperty('--reason-ratio', String(count / max));
       bar.setAttribute('aria-hidden', 'true');
       const value = element('strong', number.format(count), 'reason-column-value');
       const caption = element('span', reason.title, 'reason-column-caption');

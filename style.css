@@ -174,8 +174,7 @@ nav button{overflow-wrap:anywhere}
 .reason-column-bar {
   flex-shrink: 0;
   width: 56%;
-  min-height: 2px;
-  max-height: calc(100% - 1.5rem);
+  height: calc((100% - 1.5rem) * var(--reason-ratio));
   background: var(--reason-bar-color);
   border-radius: 6px 6px 0 0;
 }
