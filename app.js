@@ -479,38 +479,13 @@ function renderReportReasons(start, end) {
     return;
   }
   panel.append(element('p', 'هر علت برای هر رفتار در هر روز یک بار شمرده می‌شود.'));
-  const max = Math.max(...counts.values());
   for (const [type, title] of [[1, 'علت‌های خوبی'], [-1, 'علت‌های بدی']]) {
-    const reasons = state.reasons.filter(reason => reason.type === type && counts.has(reason.id))
-      .sort((a, b) => counts.get(b.id) - counts.get(a.id) || a.title.localeCompare(b.title, 'fa'));
-    panel.append(element('h4', title));
-    if (!reasons.length) {
-      panel.append(element('p', 'علتی ثبت نشده است.'));
-      continue;
-    }
-    const viewport = element('div', '', 'reason-chart-viewport');
-    viewport.dir = 'ltr';
-    viewport.tabIndex = 0;
-    viewport.setAttribute('role', 'region');
-    viewport.setAttribute('aria-label', title + '، از بیشترین به کمترین');
-    const list = element('ul', '', 'reason-chart' + (type === -1 ? ' reason-chart-negative' : ''));
-    list.setAttribute('role', 'list');
-    for (const reason of reasons) {
-      const count = counts.get(reason.id);
-      const item = element('li', '', 'reason-column');
-      const plot = element('div', '', 'reason-column-plot');
-      const bar = element('div', '', 'reason-column-bar');
-      bar.style.setProperty('--reason-ratio', String(count / max));
-      bar.setAttribute('aria-hidden', 'true');
-      const value = element('strong', number.format(count), 'reason-column-value');
-      const caption = element('span', reason.title, 'reason-column-caption');
-      caption.dir = 'rtl';
-      plot.append(value, bar);
-      item.append(plot, caption);
-      list.append(item);
-    }
-    viewport.append(list);
-    panel.append(viewport);
+    const ranked = state.reasons.filter(reason => reason.type === type && counts.has(reason.id))
+      .map(reason => ({title: reason.title, count: counts.get(reason.id)}))
+      .sort((a, b) => b.count - a.count || a.title.localeCompare(b.title, 'fa'));
+    const section = element('div', '', type === -1 ? 'pareto bad' : 'pareto');
+    renderPareto(section, ranked);
+    panel.append(element('h4', title), section);
   }
 }
 
@@ -520,11 +495,11 @@ function renderPareto(panel, ranked, total) {
     return;
   }
 
-  const percent = new Intl.NumberFormat('fa-IR', {style: 'percent', maximumFractionDigits: 1});
+  const percent = total == null ? null :
+    new Intl.NumberFormat('fa-IR', {style: 'percent', maximumFractionDigits: 1});
   const list = element('ol', '', 'pareto-list');
   let cumulative = 0;
   for (const {title, count} of ranked) {
-    cumulative += count;
     const item = element('li');
     const bar = element('progress');
     bar.max = ranked[0].count;
@@ -532,7 +507,11 @@ function renderPareto(panel, ranked, total) {
     bar.setAttribute('aria-hidden', 'true');
     const row = element('div', '', 'row');
     row.append(element('strong', title), element('span', number.format(count) + ' بار'));
-    item.append(row, bar, element('small', 'سهم تجمعی ' + percent.format(cumulative / total)));
+    item.append(row, bar);
+    if (percent) {
+      cumulative += count;
+      item.append(element('small', 'سهم تجمعی ' + percent.format(cumulative / total)));
+    }
     list.append(item);
   }
   panel.replaceChildren(list);

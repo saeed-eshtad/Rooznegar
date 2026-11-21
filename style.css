@@ -149,34 +149,3 @@ nav button{overflow-wrap:anywhere}
 
 .settings-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
 .settings-tabs button{padding-inline:6px}
-
-.reason-chart-viewport {overflow-x: auto; padding: 4px 2px 10px}
-.reason-chart {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(6.5rem, 1fr);
-  inline-size: max-content;
-  min-inline-size: 100%;
-  gap: 8px;
-  margin: 0;
-  --reason-bar-color: #2d7851;
-}
-.reason-chart-negative {--reason-bar-color: #a13e34}
-.reason-column {padding: 0; border: 0; text-align: center; inline-size: 6.5rem; justify-self: center}
-.reason-column-plot {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: center;
-  height: 9rem;
-  border-bottom: 1px solid #c7d0c4;
-}
-.reason-column-bar {
-  flex-shrink: 0;
-  width: 56%;
-  height: calc((100% - 1.5rem) * var(--reason-ratio));
-  background: var(--reason-bar-color);
-  border-radius: 6px 6px 0 0;
-}
-.reason-column-value {line-height: 1.5rem}
-.reason-column-caption {display: block; margin-top: 6px; font-size: .82rem; overflow-wrap: anywhere}
