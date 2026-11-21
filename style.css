@@ -1,4 +1,16 @@
-:root{font-family:Tahoma,Arial,sans-serif;color:#193a32;background:#f4f1e7;color-scheme:light}
+@font-face {
+  font-family: Vazir;
+  src: url('./fonts/Vazir-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: Vazir;
+  src: url('./fonts/Vazir-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+:root{font-family:Vazir,Tahoma,Arial,sans-serif;color:#193a32;background:#f4f1e7;color-scheme:light}
 *{box-sizing:border-box} [hidden]{display:none!important}
 body{margin:0} main{max-width:740px;margin:auto;padding:20px 16px 46px}
 header,.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.brand{font-size:1.25rem;font-weight:bold}

@@ -1,6 +1,7 @@
 const prefix = 'rooznegar-';
-const version = prefix + '27';
-const files = ['./', './index.html', './style.css', './app.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
+const version = prefix + '28';
+const files = ['./', './index.html', './style.css', './app.js', './manifest.webmanifest', './icon-192.png', './icon-512.png',
+  './fonts/Vazir-Regular.woff2', './fonts/Vazir-Bold.woff2'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(version).then(cache => cache.addAll(files)));
 });
