@@ -652,6 +652,12 @@ for (const button of document.querySelectorAll('[data-trend]')) {
   };
 }
 
+function monthHeading(date) {
+  const {month, year} = Object.fromEntries(
+    persianMonth.formatToParts(date).map(({type, value}) => [type, value]));
+  return month + ' ' + year;
+}
+
 function dateHeading(date, end, period, label) {
   if (period === 'day') {
     const {weekday, day, month, year} = Object.fromEntries(
@@ -662,11 +668,9 @@ function dateHeading(date, end, period, label) {
     // A Saturday–Friday week belongs to the month containing its Friday.
     const week = Math.ceil(Number(persianDay.format(end)) / 7);
     const ordinals = ['اول', 'دوم', 'سوم', 'چهارم', 'پنجم'];
-    const {month, year} = Object.fromEntries(
-      persianMonth.formatToParts(end).map(({type, value}) => [type, value]));
-    return 'هفته ' + ordinals[week - 1] + ' ' + month + ' ' + year;
+    return 'هفته ' + ordinals[week - 1] + ' ' + monthHeading(end);
   }
-  return label;
+  return period === 'month' ? monthHeading(date) : label;
 }
 
 function renderDatePicker(date, end, label) {
