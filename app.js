@@ -1147,11 +1147,18 @@ window.addEventListener('appinstalled', () => {
 installButton.onclick = async () => {
   const prompt = installPrompt;
   installPrompt = null;
-  if (prompt) {
-    await prompt.prompt().catch(() => $('#install-guide').showModal());
-  } else {
-    $('#install-guide').showModal();
+  installButton.disabled = true;
+  try {
+    if (prompt) {
+      const choice = await prompt.prompt();
+      if ((choice ?? await prompt.userChoice)?.outcome === 'accepted') return;
+    }
+  } catch (error) {
+    console.warn('Installation prompt unavailable', error);
+  } finally {
+    installButton.disabled = false;
   }
+  if (!installButton.hidden) $('#install-guide').showModal();
 };
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.error);
 selectDay(demo ? '2026-03-20' : iso(new Date()));
