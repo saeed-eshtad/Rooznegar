@@ -3,7 +3,7 @@ const demo = new URLSearchParams(location.search).get('demo') === '1';
 const key = demo ? 'rooznegar-demo-v1' : 'rooznegar-v1';
 const number = new Intl.NumberFormat('fa-IR');
 const persianDate = new Intl.DateTimeFormat('fa-IR', {dateStyle: 'medium'});
-const fullPersianDate = new Intl.DateTimeFormat('fa-IR', {dateStyle: 'full'});
+const fullPersianDate = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'});
 let kind = 1;
 let actionKind = 1;
 const basicTypes = {
@@ -652,17 +652,27 @@ for (const button of document.querySelectorAll('[data-trend]')) {
   };
 }
 
-function renderDatePicker(date, end, label) {
-  const period = activeTab === 'trends' ? trendWindows[trendPeriod] : activeTab === 'reports' ? reportPeriod : 'day';
-  const units = {day: 'روز', week: 'هفته', month: 'ماه', year: 'سال'};
-  let heading = period === 'day' ? fullPersianDate.format(date) : label;
+function dateHeading(date, end, period, label) {
+  if (period === 'day') {
+    const {weekday, day, month, year} = Object.fromEntries(
+      fullPersianDate.formatToParts(date).map(({type, value}) => [type, value]));
+    return weekday + '، ' + day + ' ' + month + '، ' + year;
+  }
   if (period === 'week') {
     // A Saturday–Friday week belongs to the month containing its Friday.
     const week = Math.ceil(Number(persianDay.format(end)) / 7);
     const ordinals = ['اول', 'دوم', 'سوم', 'چهارم', 'پنجم'];
-    heading = 'هفتهٔ ' + ordinals[week - 1] + ' ' + persianMonth.format(end);
+    const {month, year} = Object.fromEntries(
+      persianMonth.formatToParts(end).map(({type, value}) => [type, value]));
+    return 'هفته ' + ordinals[week - 1] + ' ' + month + ' ' + year;
   }
-  $('#selected-day').textContent = heading;
+  return label;
+}
+
+function renderDatePicker(date, end, label) {
+  const period = activeTab === 'trends' ? trendWindows[trendPeriod] : activeTab === 'reports' ? reportPeriod : 'day';
+  const units = {day: 'روز', week: 'هفته', month: 'ماه', year: 'سال'};
+  $('#selected-day').textContent = dateHeading(date, end, period, label);
   $('#prev').setAttribute('aria-label', units[period] + ' قبل');
   $('#next').setAttribute('aria-label', units[period] + ' بعد');
   $('#date-field').hidden = period !== 'day';
