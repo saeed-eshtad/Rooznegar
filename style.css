@@ -140,3 +140,9 @@ nav button{overflow-wrap:anywhere}
 .habit-order {display: flex; flex-wrap: wrap; gap: 6px}
 .habit-order button {min-inline-size: 64px}
 .habit-order button:disabled {opacity: .5; cursor: default}
+
+.reminder-banner{margin-block-start:14px;padding:8px 14px;border:1px solid #e4cf9a;border-radius:16px;background:#fff5d8}
+.reminder-banner p{margin:0}
+.reminder-banner button{background:#f2e4b8}
+.reminder-option{display:flex;align-items:center;gap:8px;min-height:44px}
+.reminder-option input{flex-shrink:0}

@@ -141,6 +141,7 @@ function save() {
   try {
     localStorage.setItem(key, JSON.stringify(state));
     $('#status').textContent = 'ذخیره شد';
+    renderReminder();
   } catch {
     $('#status').textContent = 'ذخیره انجام نشد. فضای مرورگر را بررسی کنید.';
   }
@@ -1039,6 +1040,65 @@ $('#restore-backup').onsubmit = async event => {
   }
   location.reload();
 };
+
+for (const button of document.querySelectorAll('[data-settings]')) {
+  button.onclick = () => {
+    for (const tab of document.querySelectorAll('[data-settings]')) {
+      tab.setAttribute('aria-pressed', String(tab === button));
+      $('#settings-' + tab.dataset.settings).hidden = tab !== button;
+    }
+  };
+}
+
+const reminderKey = key + '-reminder-start';
+const reminderEnabled = $('#reminder-enabled');
+let reminderStart = localStorage.getItem(reminderKey) ?? '';
+reminderEnabled.checked = Boolean(reminderStart);
+
+function missedYesterday(today) {
+  const yesterday = iso(shiftDate(today, -1));
+  if (!reminderStart || yesterday < reminderStart) return '';
+  const entries = state.days[yesterday]?.entries ?? {};
+  return Object.values(entries).some(entry => entry.count > 0) ? '' : yesterday;
+}
+
+function renderReminder() {
+  $('#reminder-banner').hidden = !missedYesterday(new Date());
+}
+
+reminderEnabled.onchange = () => {
+  try {
+    if (reminderEnabled.checked) {
+      const today = iso(new Date());
+      localStorage.setItem(reminderKey, today);
+      reminderStart = today;
+    } else {
+      localStorage.removeItem(reminderKey);
+      reminderStart = '';
+    }
+    $('#reminder-status').textContent = reminderStart ? 'یادآوری فعال شد.' : 'یادآوری خاموش شد.';
+  } catch {
+    reminderEnabled.checked = Boolean(reminderStart);
+    $('#reminder-status').textContent = 'ذخیرهٔ تنظیم یادآوری انجام نشد.';
+  }
+  renderReminder();
+};
+
+$('#reminder-open').onclick = () => {
+  const yesterday = missedYesterday(new Date());
+  if (!yesterday) {
+    renderReminder();
+    return;
+  }
+  document.querySelector('[data-tab="daily"]').click();
+  selectDay(yesterday);
+  $('#selected-day').focus();
+};
+window.addEventListener('pageshow', renderReminder);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) renderReminder();
+});
+renderReminder();
 
 for (const button of document.querySelectorAll('nav button')) {
   button.onclick = () => {

@@ -27,12 +27,16 @@
 <button data-tab="reports" id="reports-tab">گزارش</button>
 <button data-tab="trends">روندها</button>
 <button data-tab="habits">اطلاعات پایه</button>
-<button data-tab="backup">پشتیبانی</button>
+<button data-tab="settings">تنظیمات</button>
 </nav>
+<section id="reminder-banner" class="reminder-banner row" hidden aria-label="یادآوری ثبت">
+<p role="status">رفتارهای دیروز هنوز ثبت نشده‌اند.</p>
+<button type="button" id="reminder-open">رفتن به دیروز</button>
+</section>
 <section id="day-picker" class="panel" aria-label="انتخاب بازه">
 <div class="date-controls">
 <button id="prev" aria-label="روز قبل">→</button>
-<output id="selected-day" aria-live="polite"></output>
+<output id="selected-day" tabindex="-1" aria-live="polite"></output>
 <button id="next" aria-label="روز بعد">←</button>
 </div>
 <div class="date-options"><button id="today">امروز</button><label id="date-field">انتخاب تاریخ<input id="date" type="date" required></label></div>
@@ -137,8 +141,13 @@
 <div id="trend-reason-values"></div>
 </section>
 </section>
-<section id="backup" class="panel" hidden>
-<h2>پشتیبانی</h2>
+<section id="settings" class="panel" hidden>
+<h2>تنظیمات</h2>
+<div class="behavior-tabs" role="group" aria-label="بخش‌های تنظیمات">
+<button type="button" data-settings="backup" aria-pressed="true">بازیابی اطلاعات</button>
+<button type="button" data-settings="reminder" aria-pressed="false">یادآوری</button>
+</div>
+<section id="settings-backup">
 <p>برای نگهداری اطلاعات یا انتقال آن‌ها به دستگاه دیگر، فایل پشتیبان را دانلود کنید.</p>
 <button type="button" id="export-backup" class="primary">دانلود فایل پشتیبان</button>
 <h3>بازیابی اطلاعات</h3>
@@ -148,6 +157,13 @@
 <button type="submit">بازیابی از فایل</button>
 </form>
 <p id="backup-status" role="status"></p>
+</section>
+<section id="settings-reminder" hidden>
+<h3>یادآوری ثبت رفتارها</h3>
+<label class="reminder-option"><input type="checkbox" id="reminder-enabled"> یادآوری رفتارهای ثبت‌نشدهٔ دیروز</label>
+<p>از فردای فعال‌سازی، هنگام باز کردن یا برگشتن به روزنگار، ثبت‌های دیروز بررسی می‌شوند. ارسال اعلان هنگام بسته بودن برنامه در دسترس نیست.</p>
+<p id="reminder-status" role="status"></p>
+</section>
 </section>
 <footer>اطلاعات در همین مرورگر ذخیره می‌شوند.<p id="status" role="status"></p></footer>
 </main>
