@@ -239,12 +239,16 @@ function updateActionCredits(entry, habit, change) {
   }
 }
 
+function categoryCardClass(type) {
+  return type === 1 ? 'category-card category-positive' : 'category-card category-negative';
+}
+
 function renderEntries() {
   const selected = day();
   const date = new Date($('#date').value + 'T12:00:00');
   const cards = state.habits.filter(habit => habit.type === kind &&
     (!habit.archived || selected.entries[habit.id]) && (selected.entries[habit.id]?.count > 0 || scheduleMatches(habit.schedule, date))).map(habit => {
-    const card = element('article', '', 'entry');
+    const card = element('article', '', 'entry ' + categoryCardClass(habit.type));
     const heading = element('div', '', 'row');
     const count = element('input');
     count.type = 'number';
@@ -276,7 +280,7 @@ function renderEntries() {
     }
     heading.append(element('strong', habit.title), counter);
     const score = (habit.type > 0 ? '+' : '−') + number.format(habit.weight);
-    card.append(heading, element('p', score + ' امتیاز برای هر بار'));
+    card.append(heading, element('p', score + ' امتیاز برای هر بار', 'entry-score'));
     card.append(renderEntryReasons(selected, habit));
     return card;
   });
@@ -335,7 +339,7 @@ function definitionControls(item, refresh) {
 
 function renderHabits() {
   $('#habit-list').replaceChildren(...state.habits.filter(habit => habit.type === basicCategory.type).map(habit => {
-    const item = element('li');
+    const item = element('li', '', categoryCardClass(habit.type));
     item.append(element('strong', habit.title + ' · ' + number.format(habit.weight) + ' امتیاز'),
       definitionControls(habit, () => {
         renderHabits();
@@ -843,7 +847,7 @@ function actionType(action) {
 
 function renderActionDefinitions() {
   $('#action-definitions').replaceChildren(...state.actions.filter(action => action.type === basicCategory.type).map(action => {
-    const item = element('li');
+    const item = element('li', '', categoryCardClass(action.type));
     const names = state.habits.filter(habit => habit.type === action.type && action.habitIds.includes(habit.id))
       .map(habit => habit.title);
     item.append(element('strong', actionType(action) + ' · ' + action.title),
@@ -856,7 +860,7 @@ function renderActionDefinitions() {
 function renderActionQueue() {
   const queue = $('#action-queue');
   queue.replaceChildren(...state.actions.filter(action => action.type === actionKind && action.pending > 0).map(action => {
-    const item = element('li', '', 'row');
+    const item = element('li', '', 'row ' + categoryCardClass(action.type));
     const counter = element('div', '', 'counter');
     const total = element('output', number.format(action.pending));
     const increase = element('button', '+');

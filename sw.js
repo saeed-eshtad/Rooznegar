@@ -1,5 +1,5 @@
 const prefix = 'rooznegar-';
-const version = prefix + '26';
+const version = prefix + '27';
 const files = ['./', './index.html', './style.css', './app.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(version).then(cache => cache.addAll(files)));

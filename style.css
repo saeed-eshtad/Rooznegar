@@ -64,3 +64,63 @@ nav button{overflow-wrap:anywhere}
 .reason-choices{margin-block-start:8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:0 8px}
 .reason-choices label{display:flex;align-items:center;gap:8px;min-height:44px}
 .reason-choices input{flex-shrink:0;margin:0}
+
+.category-positive {
+  --card-start: #edf7ef;
+  --card-end: #e0f0e4;
+  --card-alt: #d7ecde;
+  --card-border: #b6d6c0;
+  --card-control: #cee7d6;
+  --card-accent: #2d7851;
+  --card-text: #194e35;
+}
+.category-negative {
+  --card-start: #fdf1ee;
+  --card-end: #fae4df;
+  --card-alt: #f7dad4;
+  --card-border: #e8bdb6;
+  --card-control: #f3d3cd;
+  --card-accent: #a13e34;
+  --card-text: #782d28;
+}
+.category-card {
+  margin-block: 10px;
+  padding: 12px clamp(10px, 3vw, 16px);
+  border: 1px solid var(--card-border);
+  border-inline-start: 4px solid var(--card-accent);
+  border-radius: 16px;
+  background: linear-gradient(to left, var(--card-end), var(--card-start));
+}
+.category-card:nth-child(even) {
+  background: linear-gradient(to left, var(--card-alt), var(--card-start));
+}
+.category-card strong, .category-card p, .category-card output {
+  color: var(--card-text);
+  overflow-wrap: anywhere;
+}
+.category-card button, .category-card .entry-reasons summary {
+  color: var(--card-text);
+  background: var(--card-control);
+}
+.category-card button:hover, .category-card .entry-reasons summary:hover {
+  background: var(--card-border);
+}
+.category-card :focus-visible {outline-color: var(--card-accent)}
+.category-card .counter {flex-shrink: 0}
+.category-card .counter input {
+  border-color: var(--card-border);
+  color: var(--card-text);
+  font-variant-numeric: tabular-nums;
+}
+.category-card .entry-score {
+  display: inline-block;
+  margin-block: 6px 8px;
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: var(--card-control);
+  font-size: .82rem;
+}
+.category-card .reason-choices {
+  border-color: var(--card-border);
+  accent-color: var(--card-accent);
+}
