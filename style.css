@@ -48,5 +48,3 @@ nav button{overflow-wrap:anywhere}
 .stats .score-positive{background:#dcefe3;color:#1c5638}
 .stats .score-negative{background:#f7dfdc;color:#812e27}
 .stats .score-net{background:#e7e8ea;color:#3d4249}
-
-.calendar-heading small{display:block;margin-block-start:4px;color:#455a51;font-weight:400}
