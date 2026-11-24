@@ -1226,7 +1226,7 @@ for (const button of pageTabs) {
   button.onclick = () => {
     for (const other of pageTabs) other.removeAttribute('aria-current');
     button.setAttribute('aria-current', 'page');
-    for (const panel of document.querySelectorAll('.panel')) panel.hidden = panel.id !== button.dataset.tab;
+    for (const panel of document.querySelectorAll('main > .panel')) panel.hidden = panel.id !== button.dataset.tab;
     activeTab = button.dataset.tab;
     $('#day-picker').hidden = !['daily', 'reports'].includes(activeTab);
     if (button.dataset.tab === 'actions') renderActionQueue();
