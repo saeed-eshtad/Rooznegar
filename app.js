@@ -1128,13 +1128,23 @@ function renderWeight() {
   renderTrendChart($('#weight-chart'), points, weightPeriod, true);
 }
 
-weightDate.onchange = () => {
+function selectWeightDate(value) {
+  weightDate.value = value || iso(new Date());
   $('#weight-status').textContent = '';
   renderWeight();
-};
+}
+
+weightDate.onchange = () => selectWeightDate(weightDate.value);
+$('#weight-today').onclick = () => selectWeightDate(iso(new Date()));
+for (const [selector, offset] of [['#weight-prev', -1], ['#weight-next', 1]]) {
+  $(selector).onclick = () => {
+    const date = new Date((weightDate.value || iso(new Date())) + 'T12:00:00');
+    selectWeightDate(iso(shiftDate(date, offset)));
+  };
+}
 $('#weight-form').onsubmit = event => {
   event.preventDefault();
-  if (!event.currentTarget.reportValidity()) return;
+  if (!weightDate.reportValidity() || !event.currentTarget.reportValidity()) return;
   const record = state.days[weightDate.value] ??= {entries: {}};
   record.weight = weightValue.valueAsNumber;
   save();

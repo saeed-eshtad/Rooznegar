@@ -191,9 +191,15 @@
 </section>
 <section id="settings-weight" hidden>
 <h3>کنترل وزن</h3>
+<section class="panel" aria-label="انتخاب تاریخ ثبت وزن">
+<div class="date-controls">
+<button type="button" id="weight-prev" aria-label="روز قبل">→</button>
+<output id="weight-date-label" aria-live="polite"></output>
+<button type="button" id="weight-next" aria-label="روز بعد">←</button>
+</div>
+<div class="date-options"><button type="button" id="weight-today">امروز</button><label>انتخاب تاریخ<input id="weight-date" type="date" required></label></div>
+</section>
 <form id="weight-form">
-<label>تاریخ ثبت <input id="weight-date" type="date" required></label>
-<output id="weight-date-label"></output>
 <label>وزن ناشتا (کیلوگرم) <input id="weight-value" type="number" min="0.01" max="999" step="0.01" inputmode="decimal" required></label>
 <button type="submit" class="primary">ذخیره وزن</button>
 </form>
