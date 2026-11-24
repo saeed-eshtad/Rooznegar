@@ -170,6 +170,7 @@
 <button type="button" data-settings="backup" aria-pressed="true">بازیابی اطلاعات</button>
 <button type="button" data-settings="reminder" aria-pressed="false">یادآوری</button>
 <button type="button" data-settings="about" aria-pressed="false">درباره من</button>
+<button type="button" data-settings="weight" aria-pressed="false">کنترل وزن</button>
 </div>
 <section id="settings-backup">
 <p>برای نگهداری اطلاعات یا انتقال آن‌ها به دستگاه دیگر، فایل پشتیبان را دانلود کنید.</p>
@@ -187,6 +188,24 @@
 <label class="reminder-option"><input type="checkbox" id="reminder-enabled"> یادآوری رفتارهای ثبت‌نشدهٔ دیروز</label>
 <p>از فردای فعال‌سازی، هنگام باز کردن یا برگشتن به روزنگار، ثبت‌های دیروز بررسی می‌شوند. ارسال اعلان هنگام بسته بودن برنامه در دسترس نیست.</p>
 <p id="reminder-status" role="status"></p>
+</section>
+<section id="settings-weight" hidden>
+<h3>کنترل وزن</h3>
+<form id="weight-form">
+<label>تاریخ ثبت <input id="weight-date" type="date" required></label>
+<output id="weight-date-label"></output>
+<label>وزن ناشتا (کیلوگرم) <input id="weight-value" type="number" min="0.01" max="999" step="0.01" inputmode="decimal" required></label>
+<button type="submit" class="primary">ذخیره وزن</button>
+</form>
+<p id="weight-status" role="status"></p>
+<div class="report-periods" role="group" aria-label="بازهٔ روند وزن">
+<button type="button" data-weight-period="day" aria-pressed="true">روزانه</button>
+<button type="button" data-weight-period="week" aria-pressed="false">هفتگی</button>
+<button type="button" data-weight-period="month" aria-pressed="false">ماهانه</button>
+<button type="button" data-weight-period="year" aria-pressed="false">سالانه</button>
+</div>
+<p id="weight-range"></p>
+<div id="weight-chart"></div>
 </section>
 <section id="settings-about" hidden>
 <h3>درباره من</h3>

@@ -154,7 +154,7 @@ nav button{overflow-wrap:anywhere}
 .reminder-option{display:flex;align-items:center;gap:8px;min-height:44px}
 .reminder-option input{flex-shrink:0}
 
-.settings-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
+.settings-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
 .settings-tabs button{padding-inline:6px}
 
 .report-details-tabs{margin-block-start:24px}

@@ -637,8 +637,13 @@ function renderTrends() {
   const points = trendPoints(date, trendPeriod);
   renderTrendReasons(points);
   const chart = $('#trend-chart');
-  if (!points.length) {
-    chart.replaceChildren(element('p', 'هنوز داده‌ای برای روند سالانه ثبت نشده است.'));
+  renderTrendChart(chart, points, trendPeriod);
+}
+
+function renderTrendChart(chart, points, period, weight = false) {
+  const measured = points.filter(point => point.value !== null);
+  if (!measured.length) {
+    chart.replaceChildren(element('p', weight ? 'در این بازه وزنی ثبت نشده است.' : 'هنوز داده‌ای برای روند سالانه ثبت نشده است.'));
     return;
   }
 
@@ -648,29 +653,35 @@ function renderTrends() {
     if (label != null) node.textContent = label;
     return node;
   };
-  const fittedWidth = {day: 380, week: 340, month: 680}[trendPeriod];
+  const fittedWidth = {day: 380, week: 340, month: 680}[period];
   const width = fittedWidth ?? Math.max(490, 100 + points.length * 58);
-  const low = Math.min(0, ...points.map(point => point.value));
-  const high = Math.max(0, ...points.map(point => point.value));
-  const bottom = low === high ? -1 : low;
-  const top = low === high ? 1 : high;
+  const scores = measured.map(point => point.value);
+  const low = weight ? Math.min(...scores) : Math.min(0, ...scores);
+  const high = weight ? Math.max(...scores) : Math.max(0, ...scores);
+  const bottom = low === high ? low - 1 : low;
+  const top = low === high ? high + 1 : high;
   const y = value => 18 + 170 * (top - value) / (top - bottom);
   const x = index => points.length === 1 ? width / 2 : width - 82 - index * (width - 120) / (points.length - 1);
   const svg = svgNode('svg', {viewBox: '0 0 ' + width + ' 230', width, height: 230, 'aria-hidden': 'true'});
-  for (const tick of new Set([top, 0, bottom])) {
+  for (const tick of new Set(weight ? [top, (top + bottom) / 2, bottom] : [top, 0, bottom])) {
     svg.append(svgNode('line', {x1: 16, x2: width - 68, y1: y(tick), y2: y(tick), class: tick === 0 ? 'trend-zero' : 'trend-grid'}),
       svgNode('text', {x: width - 8, y: y(tick) + 4, 'text-anchor': 'start'}, number.format(tick)));
   }
-  svg.append(svgNode('polyline', {points: points.map((point, index) => x(index) + ',' + y(point.value)).join(' '),
+  svg.append(svgNode('polyline', {points: points.flatMap((point, index) => point.value === null ? [] : [x(index) + ',' + y(point.value)]).join(' '),
     class: 'trend-line'}));
   const values = element('details');
   values.append(element('summary', 'مقادیر نمودار'));
   const list = element('ul');
   points.forEach(({label, value}, index) => {
-    const dot = svgNode('circle', {cx: x(index), cy: y(value), r: 4, class: 'trend-dot'});
-    dot.append(svgNode('title', {}, label + ' · ' + number.format(value)));
-    svg.append(dot, svgNode('text', {x: x(index), y: 211, 'text-anchor': 'middle'}, label));
-    list.append(element('li', label + ' · ' + number.format(value)));
+    const caption = label + ' · ' + (value === null ? 'بدون ثبت' :
+      number.format(value) + (weight ? ' کیلوگرم' : ''));
+    if (value !== null) {
+      const dot = svgNode('circle', {cx: x(index), cy: y(value), r: 4, class: 'trend-dot'});
+      dot.append(svgNode('title', {}, caption));
+      svg.append(dot);
+    }
+    svg.append(svgNode('text', {x: x(index), y: 211, 'text-anchor': 'middle'}, label));
+    list.append(element('li', caption));
   });
   values.append(list);
   const viewport = element('div', '', fittedWidth ? 'trend-viewport trend-viewport-fit' : 'trend-viewport');
@@ -1007,7 +1018,8 @@ function validBackup(data) {
       ([action, credit]) => actionIds.has(action) && validCredit(credit)));
   }
   return Object.entries(data.days).every(([date, day]) => /^\d{4,}-\d{2}-\d{2}$/.test(date) &&
-    record(day) && record(day.entries) && Object.entries(day.entries).every(validEntry));
+    record(day) && (day.weight == null || (Number.isFinite(day.weight) && day.weight >= 0.01 && day.weight <= 999)) &&
+    record(day.entries) && Object.entries(day.entries).every(validEntry));
 }
 
 $('#export-backup').onclick = () => {
@@ -1059,12 +1071,93 @@ for (const button of reportDetailButtons) {
   };
 }
 
+const weightDate = $('#weight-date');
+const weightValue = $('#weight-value');
+weightDate.value = iso(new Date());
+let weightPeriod = 'day';
+
+function weightTrend(date, period) {
+  const buckets = new Map();
+  const window = trendWindows[period];
+  const range = window ? reportRange(date, window) : null;
+  const calendar = new Intl.DateTimeFormat('en-u-ca-persian-nu-latn', {
+    year: 'numeric', month: 'numeric', day: 'numeric'
+  });
+  function bucketFor(day) {
+    const {year, month, day: dateOfMonth} = Object.fromEntries(
+      calendar.formatToParts(day).map(part => [part.type, Number(part.value)]));
+    if (period === 'day') return [iso(day), fullPersianDate.formatToParts(day).find(p => p.type === 'weekday').value];
+    if (period === 'week') {
+      const week = Math.ceil(dateOfMonth / 7);
+      return [week, 'هفتهٔ ' + number.format(week)];
+    }
+    if (period === 'month') return [month, persianMonth.formatToParts(day).find(p => p.type === 'month').value];
+    return [year, number.format(year).replace('٬', '')];
+  }
+  function add(day, value) {
+    const [key, label] = bucketFor(day);
+    if (!buckets.has(key)) buckets.set(key, {label, sum: 0, count: 0});
+    if (value == null) return;
+    const bucket = buckets.get(key);
+    bucket.sum += value;
+    bucket.count++;
+  }
+  if (range) {
+    for (let day = range.start; day <= range.end; day = shiftDate(day, 1)) {
+      add(day, state.days[iso(day)]?.weight);
+    }
+  } else {
+    for (const [key, {weight}] of Object.entries(state.days)) {
+      if (weight != null) add(new Date(key + 'T12:00:00'), weight);
+    }
+  }
+  const points = [...buckets].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
+    .map(([, {label, sum, count}]) => ({label, value: count ? Math.round(sum / count * 100) / 100 : null}));
+  return {points, range};
+}
+
+function renderWeight() {
+  if (!weightDate.value) return;
+  const date = new Date(weightDate.value + 'T12:00:00');
+  weightValue.value = state.days[weightDate.value]?.weight ?? '';
+  $('#weight-date-label').textContent = dateHeading(date, date, 'day');
+  const {points, range} = weightTrend(date, weightPeriod);
+  const metric = weightPeriod === 'day' ? 'وزن ناشتا' : 'میانگین وزن‌های ثبت‌شده';
+  const label = range ? persianDate.formatRange(range.start, range.end) : 'همهٔ سال‌ها';
+  $('#weight-range').textContent = metric + ' (کیلوگرم) · ' + label;
+  renderTrendChart($('#weight-chart'), points, weightPeriod, true);
+}
+
+weightDate.onchange = () => {
+  $('#weight-status').textContent = '';
+  renderWeight();
+};
+$('#weight-form').onsubmit = event => {
+  event.preventDefault();
+  if (!event.currentTarget.reportValidity()) return;
+  const record = state.days[weightDate.value] ??= {entries: {}};
+  record.weight = weightValue.valueAsNumber;
+  save();
+  $('#weight-status').textContent = $('#status').textContent;
+  renderWeight();
+};
+for (const button of document.querySelectorAll('[data-weight-period]')) {
+  button.onclick = () => {
+    weightPeriod = button.dataset.weightPeriod;
+    for (const tab of document.querySelectorAll('[data-weight-period]')) {
+      tab.setAttribute('aria-pressed', String(tab === button));
+    }
+    renderWeight();
+  };
+}
+
 for (const button of document.querySelectorAll('[data-settings]')) {
   button.onclick = () => {
     for (const tab of document.querySelectorAll('[data-settings]')) {
       tab.setAttribute('aria-pressed', String(tab === button));
       $('#settings-' + tab.dataset.settings).hidden = tab !== button;
     }
+    if (button.dataset.settings === 'weight') renderWeight();
   };
 }
 
